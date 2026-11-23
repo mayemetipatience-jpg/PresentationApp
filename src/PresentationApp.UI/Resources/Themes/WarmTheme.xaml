@@ -1,0 +1,10 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Thème chaud : mêmes noms de clés que les autres thèmes -->
+    <SolidColorBrush x:Key="ThemeBackgroundBrush" Color="#FFF8EE" />
+    <SolidColorBrush x:Key="ThemeTextBrush" Color="#3B2F2F" />
+    <SolidColorBrush x:Key="ThemeAccentBrush" Color="#D9822B" />
+    <FontFamily x:Key="ThemeFontFamily">Georgia</FontFamily>
+
+</ResourceDictionary>
