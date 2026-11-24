@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
@@ -20,6 +21,7 @@ namespace PresentationApp.UI.Canvas
         private FrameworkElement? _visuelSelectionne;
 
         private Rectangle? _cadreSelection;
+        private readonly List<Thumb> _poignees = new();
 
         private Point _positionInitiale;
         private double _positionXInitiale;
@@ -27,11 +29,16 @@ namespace PresentationApp.UI.Canvas
 
         private bool _deplacementEnCours;
 
+        private const double TaillePoignee = 10;
+        private const double TailleMinimum = 30;
+
         private const string TexteTitre =
             "Cliquez pour ajouter un titre";
 
         private const string TexteSousTitre =
             "Cliquez pour ajouter un sous-titre";
+
+        public event Action<SlideElement?>? ElementSelectionChangee;
 
         public SlideCanvas()
         {
@@ -45,7 +52,7 @@ namespace PresentationApp.UI.Canvas
             CreerCadreSelection();
         }
 
-        private void CreerCadreSelection()
+        public void CreerCadreSelection()
         {
             _cadreSelection = new Rectangle
             {
@@ -58,7 +65,33 @@ namespace PresentationApp.UI.Canvas
             };
 
             Children.Add(_cadreSelection);
-            SetZIndex(_cadreSelection, int.MaxValue);
+            SetZIndex(_cadreSelection, int.MaxValue - 1);
+
+            CreerPoignee("HautGauche", Cursors.SizeNWSE);
+            CreerPoignee("HautDroit", Cursors.SizeNESW);
+            CreerPoignee("BasGauche", Cursors.SizeNESW);
+            CreerPoignee("BasDroit", Cursors.SizeNWSE);
+        }
+
+        private void CreerPoignee(string nom, Cursor curseur)
+        {
+            var poignee = new Thumb
+            {
+                Width = TaillePoignee,
+                Height = TaillePoignee,
+                Background = Brushes.White,
+                BorderBrush = Brushes.DodgerBlue,
+                BorderThickness = new Thickness(1),
+                Cursor = curseur,
+                Tag = nom
+            };
+
+            poignee.DragDelta += Poignee_DragDelta;
+
+            _poignees.Add(poignee);
+            Children.Add(poignee);
+
+            SetZIndex(poignee, int.MaxValue);
         }
 
         public void ActiverInsertionTexte(Slide slide)
@@ -108,6 +141,8 @@ namespace PresentationApp.UI.Canvas
 
                 Cursor = Cursors.Arrow;
 
+                SelectionnerElement(nouvelElement, zoneTexte);
+
                 zoneTexte.Focus();
                 Keyboard.Focus(zoneTexte);
 
@@ -128,6 +163,9 @@ namespace PresentationApp.UI.Canvas
             _elementSelectionne = null;
             _visuelSelectionne = null;
             _cadreSelection = null;
+            _poignees.Clear();
+
+            ElementSelectionChangee?.Invoke(null);
 
             _modeInsertionTexte = false;
             _slidePourInsertion = null;
@@ -141,13 +179,9 @@ namespace PresentationApp.UI.Canvas
                 ColorConverter.ConvertFromString(slide.BackgroundColor);
 
             if (couleurConvertie is Color couleur)
-            {
                 Background = new SolidColorBrush(couleur);
-            }
             else
-            {
                 Background = Brushes.White;
-            }
 
             foreach (SlideElement element in slide.Elements)
             {
@@ -176,70 +210,64 @@ namespace PresentationApp.UI.Canvas
             FrameworkElement visual,
             SlideElement element)
         {
-            visual.PreviewMouseLeftButtonDown +=
-                (sender, e) =>
+            visual.PreviewMouseLeftButtonDown += (sender, e) =>
+            {
+                SelectionnerElement(element, visual);
+
+                _positionInitiale = e.GetPosition(this);
+                _positionXInitiale = element.X;
+                _positionYInitiale = element.Y;
+
+                _deplacementEnCours = false;
+
+                Mouse.Capture(visual);
+            };
+
+            visual.PreviewMouseMove += (sender, e) =>
+            {
+                if (Mouse.LeftButton != MouseButtonState.Pressed)
+                    return;
+
+                if (_elementSelectionne != element)
+                    return;
+
+                Point positionActuelle = e.GetPosition(this);
+
+                double differenceX =
+                    positionActuelle.X - _positionInitiale.X;
+
+                double differenceY =
+                    positionActuelle.Y - _positionInitiale.Y;
+
+                if (Math.Abs(differenceX) > 2 ||
+                    Math.Abs(differenceY) > 2)
                 {
-                    SelectionnerElement(element, visual);
+                    _deplacementEnCours = true;
+                }
 
-                    _positionInitiale = e.GetPosition(this);
-                    _positionXInitiale = element.X;
-                    _positionYInitiale = element.Y;
+                if (!_deplacementEnCours)
+                    return;
 
-                    _deplacementEnCours = false;
+                element.X = Math.Max(
+                    0, _positionXInitiale + differenceX);
 
-                    Mouse.Capture(visual);
+                element.Y = Math.Max(
+                    0, _positionYInitiale + differenceY);
 
-                    e.Handled = false;
-                };
+                SetLeft(visual, element.X);
+                SetTop(visual, element.Y);
 
-            visual.PreviewMouseMove +=
-                (sender, e) =>
-                {
-                    if (Mouse.LeftButton != MouseButtonState.Pressed)
-                        return;
+                ActualiserCadreSelection();
+                ElementSelectionChangee?.Invoke(element);
+            };
 
-                    if (_elementSelectionne != element)
-                        return;
+            visual.PreviewMouseLeftButtonUp += (sender, e) =>
+            {
+                if (Mouse.Captured == visual)
+                    Mouse.Capture(null);
 
-                    Point positionActuelle = e.GetPosition(this);
-
-                    double differenceX =
-                        positionActuelle.X - _positionInitiale.X;
-
-                    double differenceY =
-                        positionActuelle.Y - _positionInitiale.Y;
-
-                    if (Math.Abs(differenceX) > 2 ||
-                        Math.Abs(differenceY) > 2)
-                    {
-                        _deplacementEnCours = true;
-                    }
-
-                    if (!_deplacementEnCours)
-                        return;
-
-                    element.X = Math.Max(
-                        0,
-                        _positionXInitiale + differenceX);
-
-                    element.Y = Math.Max(
-                        0,
-                        _positionYInitiale + differenceY);
-
-                    SetLeft(visual, element.X);
-                    SetTop(visual, element.Y);
-
-                    ActualiserCadreSelection();
-                };
-
-            visual.PreviewMouseLeftButtonUp +=
-                (sender, e) =>
-                {
-                    if (Mouse.Captured == visual)
-                        Mouse.Capture(null);
-
-                    _deplacementEnCours = false;
-                };
+                _deplacementEnCours = false;
+            };
         }
 
         private void SelectionnerElement(
@@ -250,6 +278,8 @@ namespace PresentationApp.UI.Canvas
             _visuelSelectionne = visual;
 
             ActualiserCadreSelection();
+
+            ElementSelectionChangee?.Invoke(element);
         }
 
         private void DeselectionnerElement()
@@ -258,10 +288,30 @@ namespace PresentationApp.UI.Canvas
             _visuelSelectionne = null;
 
             if (_cadreSelection != null)
-            {
-                _cadreSelection.Visibility =
-                    Visibility.Collapsed;
-            }
+                _cadreSelection.Visibility = Visibility.Collapsed;
+
+            foreach (Thumb poignee in _poignees)
+                poignee.Visibility = Visibility.Collapsed;
+
+            ElementSelectionChangee?.Invoke(null);
+        }
+
+        public void ActualiserElementSelectionne()
+        {
+            if (_elementSelectionne == null ||
+                _visuelSelectionne == null)
+                return;
+
+            _visuelSelectionne.Width = _elementSelectionne.Width;
+            _visuelSelectionne.Height = _elementSelectionne.Height;
+
+            SetLeft(_visuelSelectionne, _elementSelectionne.X);
+            SetTop(_visuelSelectionne, _elementSelectionne.Y);
+
+            _visuelSelectionne.RenderTransform =
+                new RotateTransform(_elementSelectionne.Rotation);
+
+            ActualiserCadreSelection();
         }
 
         private void ActualiserCadreSelection()
@@ -271,22 +321,133 @@ namespace PresentationApp.UI.Canvas
                 _cadreSelection == null)
                 return;
 
-            _cadreSelection.Width =
-                Math.Max(1, _elementSelectionne.Width + 4);
+            double x = _elementSelectionne.X;
+            double y = _elementSelectionne.Y;
+            double largeur = _elementSelectionne.Width;
+            double hauteur = _elementSelectionne.Height;
 
-            _cadreSelection.Height =
-                Math.Max(1, _elementSelectionne.Height + 4);
+            _cadreSelection.Width = largeur + 4;
+            _cadreSelection.Height = hauteur + 4;
 
-            SetLeft(
-                _cadreSelection,
-                _elementSelectionne.X - 2);
-
-            SetTop(
-                _cadreSelection,
-                _elementSelectionne.Y - 2);
+            SetLeft(_cadreSelection, x - 2);
+            SetTop(_cadreSelection, y - 2);
 
             _cadreSelection.Visibility = Visibility.Visible;
-            SetZIndex(_cadreSelection, int.MaxValue);
+
+            PositionnerPoignee(0, x - TaillePoignee / 2,
+                y - TaillePoignee / 2);
+
+            PositionnerPoignee(1, x + largeur - TaillePoignee / 2,
+                y - TaillePoignee / 2);
+
+            PositionnerPoignee(2, x - TaillePoignee / 2,
+                y + hauteur - TaillePoignee / 2);
+
+            PositionnerPoignee(3, x + largeur - TaillePoignee / 2,
+                y + hauteur - TaillePoignee / 2);
+
+            foreach (Thumb poignee in _poignees)
+                poignee.Visibility = Visibility.Visible;
+        }
+
+        private void PositionnerPoignee(int index, double x, double y)
+        {
+            if (index >= _poignees.Count)
+                return;
+
+            SetLeft(_poignees[index], x);
+            SetTop(_poignees[index], y);
+        }
+
+        private void Poignee_DragDelta(
+            object sender,
+            DragDeltaEventArgs e)
+        {
+            if (_elementSelectionne == null ||
+                _visuelSelectionne == null ||
+                sender is not Thumb poignee)
+                return;
+
+            double x = _elementSelectionne.X;
+            double y = _elementSelectionne.Y;
+            double largeur = _elementSelectionne.Width;
+            double hauteur = _elementSelectionne.Height;
+
+            double nouveauX = x;
+            double nouveauY = y;
+            double nouvelleLargeur = largeur;
+            double nouvelleHauteur = hauteur;
+
+            switch (poignee.Tag?.ToString())
+            {
+                case "HautGauche":
+                    nouvelleLargeur = Math.Max(
+                        TailleMinimum, largeur - e.HorizontalChange);
+
+                    nouvelleHauteur = Math.Max(
+                        TailleMinimum, hauteur - e.VerticalChange);
+
+                    nouveauX = x + largeur - nouvelleLargeur;
+                    nouveauY = y + hauteur - nouvelleHauteur;
+                    break;
+
+                case "HautDroit":
+                    nouvelleLargeur = Math.Max(
+                        TailleMinimum, largeur + e.HorizontalChange);
+
+                    nouvelleHauteur = Math.Max(
+                        TailleMinimum, hauteur - e.VerticalChange);
+
+                    nouveauY = y + hauteur - nouvelleHauteur;
+                    break;
+
+                case "BasGauche":
+                    nouvelleLargeur = Math.Max(
+                        TailleMinimum, largeur - e.HorizontalChange);
+
+                    nouvelleHauteur = Math.Max(
+                        TailleMinimum, hauteur + e.VerticalChange);
+
+                    nouveauX = x + largeur - nouvelleLargeur;
+                    break;
+
+                case "BasDroit":
+                    nouvelleLargeur = Math.Max(
+                        TailleMinimum, largeur + e.HorizontalChange);
+
+                    nouvelleHauteur = Math.Max(
+                        TailleMinimum, hauteur + e.VerticalChange);
+                    break;
+            }
+
+            if (nouveauX < 0)
+            {
+                nouvelleLargeur += nouveauX;
+                nouveauX = 0;
+            }
+
+            if (nouveauY < 0)
+            {
+                nouvelleHauteur += nouveauY;
+                nouveauY = 0;
+            }
+
+            nouvelleLargeur = Math.Max(TailleMinimum, nouvelleLargeur);
+            nouvelleHauteur = Math.Max(TailleMinimum, nouvelleHauteur);
+
+            _elementSelectionne.X = nouveauX;
+            _elementSelectionne.Y = nouveauY;
+            _elementSelectionne.Width = nouvelleLargeur;
+            _elementSelectionne.Height = nouvelleHauteur;
+
+            _visuelSelectionne.Width = nouvelleLargeur;
+            _visuelSelectionne.Height = nouvelleHauteur;
+
+            SetLeft(_visuelSelectionne, nouveauX);
+            SetTop(_visuelSelectionne, nouveauY);
+
+            ActualiserCadreSelection();
+            ElementSelectionChangee?.Invoke(_elementSelectionne);
         }
 
         private FrameworkElement? CreateVisual(SlideElement element)
@@ -311,22 +472,16 @@ namespace PresentationApp.UI.Canvas
             bool estSousTitre =
                 element.Height < 80 && element.Width >= 700;
 
-            bool estEmplacementTitre =
-                element.Text == TexteTitre;
-
-            bool estEmplacementSousTitre =
-                element.Text == TexteSousTitre;
-
             bool estPlaceholder =
-                estEmplacementTitre || estEmplacementSousTitre;
+                element.Text == TexteTitre ||
+                element.Text == TexteSousTitre;
 
             var zoneTexte = new TextBox
             {
                 Width = element.Width,
                 Height = element.Height,
 
-                FontSize = estTitre ? 34 :
-                           estSousTitre ? 24 : 24,
+                FontSize = estTitre ? 34 : 24,
 
                 FontWeight = estTitre
                     ? FontWeights.Bold
@@ -337,22 +492,19 @@ namespace PresentationApp.UI.Canvas
                     : Brushes.Black,
 
                 Background = Brushes.Transparent,
-
                 BorderBrush = Brushes.Transparent,
                 BorderThickness = new Thickness(1),
 
                 TextWrapping = TextWrapping.Wrap,
                 AcceptsReturn = true,
 
-                VerticalContentAlignment =
-                    VerticalAlignment.Center,
+                VerticalContentAlignment = VerticalAlignment.Center,
 
                 TextAlignment = estTitre || estSousTitre
                     ? TextAlignment.Center
                     : TextAlignment.Left,
 
-                VerticalScrollBarVisibility =
-                    ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
 
                 Text = element.Text
             };
