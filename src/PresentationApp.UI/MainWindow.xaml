@@ -65,7 +65,7 @@
                            Margin="5,0,15,0"/>
 
                 <TextBlock Grid.Column="1"
-                           Text="Mini PowerPoint  |  Présentation sans titre"
+                           Text="Mini PowerPoint | Présentation sans titre"
                            Foreground="White"
                            FontSize="14"
                            VerticalAlignment="Center"/>
@@ -80,34 +80,29 @@
             </Grid>
         </Border>
 
-        <!-- ONGLETS DU RUBAN -->
+        <!-- ONGLETS -->
         <Border Grid.Row="1" Background="White">
             <StackPanel Orientation="Horizontal"
                         VerticalAlignment="Center">
-                <Button Style="{StaticResource TabButton}"
-                        Content="Fichier"/>
+
+                <Button Style="{StaticResource TabButton}" Content="Fichier"/>
                 <Button Style="{StaticResource TabButton}"
                         Content="Accueil"
                         FontWeight="Bold"
                         Foreground="#B7472A"/>
-                <Button Style="{StaticResource TabButton}"
-                        Content="Insertion"/>
-                <Button Style="{StaticResource TabButton}"
-                        Content="Création"/>
-                <Button Style="{StaticResource TabButton}"
-                        Content="Transitions"/>
-                <Button Style="{StaticResource TabButton}"
-                        Content="Animations"/>
-                <Button Style="{StaticResource TabButton}"
-                        Content="Diaporama"/>
-                <Button Style="{StaticResource TabButton}"
-                        Content="Affichage"/>
+                <Button Style="{StaticResource TabButton}" Content="Insertion"/>
+                <Button Style="{StaticResource TabButton}" Content="Création"/>
+                <Button Style="{StaticResource TabButton}" Content="Transitions"/>
+                <Button Style="{StaticResource TabButton}" Content="Animations"/>
+                <Button Style="{StaticResource TabButton}" Content="Diaporama"/>
+                <Button Style="{StaticResource TabButton}" Content="Affichage"/>
+
             </StackPanel>
         </Border>
 
         <!-- RUBAN D'OUTILS -->
         <Border Grid.Row="2"
-                Background="#FFFFFF"
+                Background="White"
                 BorderBrush="#DDDDDD"
                 BorderThickness="0,1,0,1"
                 Padding="8,5">
@@ -133,7 +128,8 @@
 
                 <StackPanel Width="170">
                     <WrapPanel HorizontalAlignment="Center">
-                        <Button Content="Texte"/>
+                        <Button Content="Texte"
+                                Click="BtnTexte_Click"/>
                         <Button Content="Police"/>
                         <Button Content="Couleur"/>
                         <Button Content="Taille"/>
@@ -171,7 +167,8 @@
 
                 <StackPanel Width="145">
                     <WrapPanel HorizontalAlignment="Center">
-                        <Button Content="Ajouter"/>
+                        <Button Content="Ajouter"
+                                Click="BtnNouvelleDiapositive_Click"/>
                         <Button Content="Supprimer"/>
                     </WrapPanel>
                     <TextBlock Text="Diapositives"
@@ -204,10 +201,10 @@
                                DockPanel.Dock="Top"/>
 
                     <Button Content="+ Nouvelle diapositive"
-        DockPanel.Dock="Bottom"
-        HorizontalAlignment="Stretch"
-        Margin="2,8,2,2"
-        Click="BtnNouvelleDiapositive_Click"/>
+                            DockPanel.Dock="Bottom"
+                            HorizontalAlignment="Stretch"
+                            Margin="2,8,2,2"
+                            Click="BtnNouvelleDiapositive_Click"/>
 
                     <Grid>
                         <ListBox x:Name="lstDiapositives"
@@ -282,15 +279,12 @@
 
                         <StackPanel Margin="2">
                             <TextBlock Text="Horizontal"/>
-                            <TextBox Text="0"
-                                     Padding="5"/>
+                            <TextBox Text="0" Padding="5"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Column="1"
-                                    Margin="2">
+                        <StackPanel Grid.Column="1" Margin="2">
                             <TextBlock Text="Vertical"/>
-                            <TextBox Text="0"
-                                     Padding="5"/>
+                            <TextBox Text="0" Padding="5"/>
                         </StackPanel>
                     </Grid>
 
@@ -308,15 +302,12 @@
 
                         <StackPanel Margin="2">
                             <TextBlock Text="Largeur"/>
-                            <TextBox Text="100"
-                                     Padding="5"/>
+                            <TextBox Text="100" Padding="5"/>
                         </StackPanel>
 
-                        <StackPanel Grid.Column="1"
-                                    Margin="2">
+                        <StackPanel Grid.Column="1" Margin="2">
                             <TextBlock Text="Hauteur"/>
-                            <TextBox Text="50"
-                                     Padding="5"/>
+                            <TextBox Text="50" Padding="5"/>
                         </StackPanel>
                     </Grid>
 
@@ -363,14 +354,17 @@
                 <StackPanel Grid.Column="1"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
+
                     <TextBlock Text="Zoom"
                                FontSize="11"
                                VerticalAlignment="Center"/>
+
                     <Slider Width="100"
                             Minimum="50"
                             Maximum="150"
                             Value="100"
                             Margin="10,0"/>
+
                     <TextBlock Text="100%"
                                FontSize="11"
                                VerticalAlignment="Center"/>

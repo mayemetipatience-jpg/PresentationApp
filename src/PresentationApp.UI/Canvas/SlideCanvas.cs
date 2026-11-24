@@ -3,21 +3,93 @@ using System;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using PresentationApp.Core.Models;
 
+
 namespace PresentationApp.UI.Canvas
 {
     public class SlideCanvas : System.Windows.Controls.Canvas
     {
+        private Slide? _slidePourInsertion;
+        private bool _modeInsertionTexte;
+
         public SlideCanvas()
         {
             Width = 960;
             Height = 540;
             Background = Brushes.White;
             ClipToBounds = true;
+
+            MouseLeftButtonDown += SlideCanvas_MouseLeftButtonDown;
+        }
+
+        public void ActiverInsertionTexte(Slide slide)
+        {
+            _slidePourInsertion = slide;
+            _modeInsertionTexte = true;
+        }
+
+        private void SlideCanvas_MouseLeftButtonDown(
+        object sender,
+        MouseButtonEventArgs e)
+        {
+            if (!_modeInsertionTexte || _slidePourInsertion == null)
+                return;
+
+            // Ne pas créer un nouveau texte lorsqu'on clique sur un élément existant.
+            if (e.OriginalSource != this)
+                return;
+
+            Point position = e.GetPosition(this);
+
+            var nouvelElement = new TextElement
+            {
+                X = position.X,
+                Y = position.Y,
+                Width = 250,
+                Height = 80,
+                Text = string.Empty
+            };
+
+            _slidePourInsertion.Elements.Add(nouvelElement);
+
+            var zoneTexte = new TextBox
+            {
+                Width = nouvelElement.Width,
+                Height = nouvelElement.Height,
+                FontSize = 24,
+                Foreground = Brushes.Black,
+                Background = Brushes.Transparent,
+                BorderBrush = Brushes.DodgerBlue,
+                BorderThickness = new Thickness(1),
+                TextWrapping = TextWrapping.Wrap,
+                AcceptsReturn = true,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                Text = string.Empty
+            };
+
+            zoneTexte.TextChanged += (s, args) =>
+            {
+                nouvelElement.Text = zoneTexte.Text;
+            };
+
+            SetLeft(zoneTexte, nouvelElement.X);
+            SetTop(zoneTexte, nouvelElement.Y);
+            SetZIndex(zoneTexte, nouvelElement.ZIndex);
+
+            Children.Add(zoneTexte);
+
+            _modeInsertionTexte = false;
+            _slidePourInsertion = null;
+
+            zoneTexte.Focus();
+            Keyboard.Focus(zoneTexte);
+
+            e.Handled = true;
         }
 
         public void DisplaySlide(Slide? slide)
@@ -27,9 +99,8 @@ namespace PresentationApp.UI.Canvas
             if (slide == null)
                 return;
 
-            // Définir la couleur de fond de la diapositive
             var couleurConvertie =
-                ColorConverter.ConvertFromString(slide.BackgroundColor);
+            ColorConverter.ConvertFromString(slide.BackgroundColor);
 
             if (couleurConvertie is Color couleur)
             {
@@ -40,7 +111,6 @@ namespace PresentationApp.UI.Canvas
                 Background = Brushes.White;
             }
 
-            // Afficher les éléments de la diapositive
             foreach (SlideElement element in slide.Elements)
             {
                 FrameworkElement? visual = CreateVisual(element);
@@ -54,7 +124,7 @@ namespace PresentationApp.UI.Canvas
 
                 visual.RenderTransformOrigin = new Point(0.5, 0.5);
                 visual.RenderTransform =
-                    new RotateTransform(element.Rotation);
+                new RotateTransform(element.Rotation);
 
                 Children.Add(visual);
             }
@@ -154,11 +224,11 @@ namespace PresentationApp.UI.Canvas
             var head = new Polygon
             {
                 Points = new PointCollection
-                {
-                    new Point(element.Width, element.Height / 2),
-                    new Point(element.Width - 14, element.Height / 2 - 8),
-                    new Point(element.Width - 14, element.Height / 2 + 8)
-                },
+{
+new Point(element.Width, element.Height / 2),
+new Point(element.Width - 14, element.Height / 2 - 8),
+new Point(element.Width - 14, element.Height / 2 + 8)
+},
                 Fill = Brushes.Black
             };
 
@@ -181,13 +251,12 @@ namespace PresentationApp.UI.Canvas
             {
                 if (!string.IsNullOrWhiteSpace(element.ImagePath))
                 {
-                    string path =
-                        System.IO.Path.GetFullPath(element.ImagePath);
+                    string path = System.IO.Path.GetFullPath(element.ImagePath);
 
                     if (File.Exists(path))
                     {
                         visual.Source = new BitmapImage(
-                            new Uri(path, UriKind.Absolute));
+                        new Uri(path, UriKind.Absolute));
                     }
                 }
             }
