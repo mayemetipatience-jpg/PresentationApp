@@ -46,4 +46,61 @@ public static class SlideTemplates
         });
         return slide;
     }
+
+    // Modèle "Deux colonnes" : deux zones de texte côte à côte, séparées de 30 pixels.
+    public static Slide DeuxColonnes()
+    {
+        var slide = new Slide();
+        double largeur = (SlideWidth - 120 - 30) / 2;
+        double xDroite = 60 + largeur + 30;
+
+        slide.Elements.Add(new TextElement
+        {
+            Text = "Titre",
+            X = 60,
+            Y = 40,
+            Width = SlideWidth - 120,
+            Height = 100
+        });
+        slide.Elements.Add(new TextElement
+        {
+            Text = "Colonne de gauche",
+            X = 60,
+            Y = 160,
+            Width = largeur,
+            Height = 320
+        });
+        slide.Elements.Add(new TextElement
+        {
+            Text = "Colonne de droite",
+            X = xDroite,
+            Y = 160,
+            Width = largeur,
+            Height = 320
+        });
+        return slide;
+    }
+
+    // Modèle "Image + légende" : une image, avec une légende dessous.
+    public static Slide ImageEtLegende(string cheminImage)
+    {
+        var slide = new Slide();
+        slide.Elements.Add(new ImageElement
+        {
+            ImagePath = cheminImage,
+            X = 130,
+            Y = 40,
+            Width = SlideWidth - 260,
+            Height = 360
+        });
+        slide.Elements.Add(new TextElement
+        {
+            Text = "Légende",
+            X = 130,
+            Y = 420,
+            Width = SlideWidth - 260,
+            Height = 60
+        });
+        return slide;
+    }
 }
