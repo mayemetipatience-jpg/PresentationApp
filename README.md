@@ -1,2 +1,2 @@
-# PresentationApp
-Application de presentation type PowePoint en C#
+PresentationApp
+Application de presentation type PowerPoint en C#
