@@ -38,6 +38,30 @@ public partial class MainWindow : Window
         lstDiapositives.SelectedIndex = 0;
     }
 
+    private void BtnNouvelleDiapositive_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        // Calculer le numéro de la nouvelle diapositive
+        int nouvelOrdre = _presentation.Slides.Count + 1;
+
+        // Créer la nouvelle diapositive
+        var nouvelleDiapositive = new Slide
+        {
+            Order = nouvelOrdre
+        };
+
+        // Ajouter la diapositive à la présentation
+        _presentation.Slides.Add(nouvelleDiapositive);
+
+        // Actualiser la liste de diapositives
+        lstDiapositives.Items.Refresh();
+
+        // Sélectionner automatiquement la nouvelle diapositive
+        lstDiapositives.SelectedItem = nouvelleDiapositive;
+    }
+
+
     private void LstDiapositives_SelectionChanged(
         object sender,
         SelectionChangedEventArgs e)
