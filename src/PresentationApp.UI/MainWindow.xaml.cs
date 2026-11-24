@@ -9,6 +9,9 @@ public partial class MainWindow : Window
 {
     private readonly Presentation _presentation = new();
 
+    private const string TexteTitre = "Cliquez pour ajouter un titre";
+    private const string TexteSousTitre = "Cliquez pour ajouter un sous-titre";
+
     public MainWindow()
     {
         InitializeComponent();
@@ -17,10 +20,7 @@ public partial class MainWindow : Window
 
     private void InitialiserPresentation()
     {
-        var premiereDiapositive = new Slide
-        {
-            Order = 1
-        };
+        var premiereDiapositive = CreerDiapositive(1);
 
         _presentation.Slides.Add(premiereDiapositive);
 
@@ -31,6 +31,36 @@ public partial class MainWindow : Window
             LstDiapositives_SelectionChanged;
 
         lstDiapositives.SelectedIndex = 0;
+    }
+
+    private Slide CreerDiapositive(int ordre)
+    {
+        var diapositive = new Slide
+        {
+            Order = ordre
+        };
+
+        // Emplacement du titre
+        diapositive.Elements.Add(new TextElement
+        {
+            X = 100,
+            Y = 130,
+            Width = 760,
+            Height = 90,
+            Text = TexteTitre
+        });
+
+        // Emplacement du sous-titre
+        diapositive.Elements.Add(new TextElement
+        {
+            X = 100,
+            Y = 240,
+            Width = 760,
+            Height = 70,
+            Text = TexteSousTitre
+        });
+
+        return diapositive;
     }
 
     private void LstDiapositives_SelectionChanged(
@@ -49,10 +79,7 @@ public partial class MainWindow : Window
     {
         int nouvelOrdre = _presentation.Slides.Count + 1;
 
-        var nouvelleDiapositive = new Slide
-        {
-            Order = nouvelOrdre
-        };
+        var nouvelleDiapositive = CreerDiapositive(nouvelOrdre);
 
         _presentation.Slides.Add(nouvelleDiapositive);
 
@@ -67,12 +94,6 @@ public partial class MainWindow : Window
         if (lstDiapositives.SelectedItem is Slide slide)
         {
             slideCanvas.ActiverInsertionTexte(slide);
-
-            MessageBox.Show(
-                "Clique sur la diapositive pour commencer à écrire.",
-                "Insertion de texte",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
         }
     }
 }
