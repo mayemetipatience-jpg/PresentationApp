@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.IO;
+using System.Collections.Generic;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -39,7 +40,6 @@ namespace PresentationApp.UI.Canvas
             "Cliquez pour ajouter un sous-titre";
 
         public event Action<SlideElement?>? ElementSelectionChangee;
-
         public event Action? DiapositiveModifiee;
 
         public SlideCanvas()
@@ -107,7 +107,6 @@ namespace PresentationApp.UI.Canvas
             _modeInsertionTexte = true;
 
             Cursor = Cursors.Cross;
-
             DeselectionnerElement();
         }
 
@@ -160,9 +159,7 @@ namespace PresentationApp.UI.Canvas
             }
 
             if (e.OriginalSource == this)
-            {
                 DeselectionnerElement();
-            }
         }
 
         public void DisplaySlide(Slide? slide)
@@ -184,13 +181,19 @@ namespace PresentationApp.UI.Canvas
             if (slide == null)
                 return;
 
-            var couleurConvertie =
-                ColorConverter.ConvertFromString(slide.BackgroundColor);
+            try
+            {
+                var couleurConvertie =
+                    ColorConverter.ConvertFromString(slide.BackgroundColor);
 
-            if (couleurConvertie is Color couleur)
-                Background = new SolidColorBrush(couleur);
-            else
+                Background = couleurConvertie is Color couleur
+                    ? new SolidColorBrush(couleur)
+                    : Brushes.White;
+            }
+            catch
+            {
                 Background = Brushes.White;
+            }
 
             foreach (SlideElement element in slide.Elements)
             {
@@ -307,6 +310,7 @@ namespace PresentationApp.UI.Canvas
             ElementSelectionChangee?.Invoke(null);
         }
 
+        // Actualise la position, les dimensions et le style de l'élément.
         public void ActualiserElementSelectionne()
         {
             if (_elementSelectionne == null ||
@@ -322,9 +326,77 @@ namespace PresentationApp.UI.Canvas
             _visuelSelectionne.RenderTransform =
                 new RotateTransform(_elementSelectionne.Rotation);
 
+            // NOUVEAU : actualisation du formatage du texte.
+            if (_elementSelectionne is TextElement texte &&
+                _visuelSelectionne is TextBox zoneTexte)
+            {
+                ActualiserStyleTexte(texte, zoneTexte);
+            }
+
             ActualiserCadreSelection();
 
             NotifierModification();
+        }
+
+        // Applique le style du modèle au TextBox visible.
+        private void ActualiserStyleTexte(
+            TextElement element,
+            TextBox zoneTexte)
+        {
+            ElementStyle style = element.Style ?? new ElementStyle();
+
+            bool estTitre =
+                element.Height >= 80 && element.Width >= 700;
+
+            bool estSousTitre =
+                element.Height < 80 && element.Width >= 700;
+
+            bool estPlaceholder =
+                zoneTexte.Text == TexteTitre ||
+                zoneTexte.Text == TexteSousTitre;
+
+            double taillePolice = style.FontSize > 0
+                ? style.FontSize
+                : 18;
+
+            // Conserve la taille spéciale des espaces réservés.
+            if (taillePolice == 18 && estTitre)
+                taillePolice = 34;
+            else if (taillePolice == 18 && estSousTitre)
+                taillePolice = 24;
+
+            try
+            {
+                zoneTexte.FontFamily = new FontFamily(
+                    string.IsNullOrWhiteSpace(style.FontFamily)
+                        ? "Segoe UI"
+                        : style.FontFamily);
+            }
+            catch
+            {
+                zoneTexte.FontFamily = new FontFamily("Segoe UI");
+            }
+
+            zoneTexte.FontSize = taillePolice;
+
+            zoneTexte.FontWeight =
+                style.IsBold || estTitre
+                    ? FontWeights.Bold
+                    : FontWeights.Normal;
+
+            zoneTexte.FontStyle =
+                style.IsItalic
+                    ? FontStyles.Italic
+                    : FontStyles.Normal;
+
+            zoneTexte.TextDecorations =
+                style.IsUnderline
+                    ? TextDecorations.Underline
+                    : null;
+
+            zoneTexte.Foreground = estPlaceholder
+                ? Brushes.Gray
+                : ConvertirCouleurTexte(style.TextColor);
         }
 
         private void ActualiserCadreSelection()
@@ -479,8 +551,9 @@ namespace PresentationApp.UI.Canvas
             return null;
         }
 
-        // Convertit une couleur du modèle en pinceau WPF.
-        private Brush ConvertirCouleurTexte(string? couleur)
+        private Brush ConvertirCouleur(
+            string? couleur,
+            Brush couleurParDefaut)
         {
             try
             {
@@ -495,13 +568,17 @@ namespace PresentationApp.UI.Canvas
             }
             catch
             {
-                // Utilise le noir si la couleur est incorrecte.
+                // Utilise la couleur par défaut.
             }
 
-            return Brushes.Black;
+            return couleurParDefaut;
         }
 
-        // Crée l'éditeur en respectant les propriétés de ElementStyle.
+        private Brush ConvertirCouleurTexte(string? couleur)
+        {
+            return ConvertirCouleur(couleur, Brushes.Black);
+        }
+
         private TextBox CreerEditeurTexte(TextElement element)
         {
             bool estTitre =
@@ -520,7 +597,6 @@ namespace PresentationApp.UI.Canvas
                 ? style.FontSize
                 : 18;
 
-            // Conserve l'apparence initiale des titres et sous-titres.
             if (taillePolice == 18 && estTitre)
                 taillePolice = 34;
             else if (taillePolice == 18 && estSousTitre)
@@ -556,6 +632,10 @@ namespace PresentationApp.UI.Canvas
                     ? FontStyles.Italic
                     : FontStyles.Normal,
 
+                TextDecorations = style.IsUnderline
+                    ? TextDecorations.Underline
+                    : null,
+
                 Foreground = estPlaceholder
                     ? Brushes.Gray
                     : ConvertirCouleurTexte(style.TextColor),
@@ -586,7 +666,7 @@ namespace PresentationApp.UI.Canvas
                     zoneTexte.Text != TexteSousTitre)
                 {
                     zoneTexte.Foreground =
-                        ConvertirCouleurTexte(style.TextColor);
+                        ConvertirCouleurTexte(element.Style?.TextColor);
                 }
 
                 NotifierModification();
@@ -600,7 +680,7 @@ namespace PresentationApp.UI.Canvas
                     zoneTexte.Text = string.Empty;
 
                     zoneTexte.Foreground =
-                        ConvertirCouleurTexte(style.TextColor);
+                        ConvertirCouleurTexte(element.Style?.TextColor);
                 }
 
                 zoneTexte.BorderBrush = Brushes.DodgerBlue;
@@ -622,7 +702,7 @@ namespace PresentationApp.UI.Canvas
 
                 zoneTexte.Foreground = placeholderActuel
                     ? Brushes.Gray
-                    : ConvertirCouleurTexte(style.TextColor);
+                    : ConvertirCouleurTexte(element.Style?.TextColor);
 
                 zoneTexte.BorderBrush = Brushes.Transparent;
             };
@@ -630,18 +710,54 @@ namespace PresentationApp.UI.Canvas
             return zoneTexte;
         }
 
+        // Création des formes.
         private FrameworkElement CreateShape(ShapeElement element)
         {
+            Brush remplissage =
+                ConvertirCouleur(element.Style?.FillColor, Brushes.LightBlue);
+
+            Brush contour =
+                ConvertirCouleur(element.Style?.StrokeColor, Brushes.Black);
+
+            double epaisseur =
+                element.Style?.StrokeThickness > 0
+                    ? element.Style.StrokeThickness
+                    : 2;
+
+            double largeur = Math.Max(1, element.Width);
+            double hauteur = Math.Max(1, element.Height);
+
             Shape visual;
 
             switch (element.ShapeType)
             {
+                case ShapeType.Rectangle:
+                case ShapeType.Square:
+                    visual = new Rectangle
+                    {
+                        Fill = remplissage,
+                        Stroke = contour,
+                        StrokeThickness = epaisseur
+                    };
+                    break;
+
+                case ShapeType.RoundedRectangle:
+                    visual = new Rectangle
+                    {
+                        RadiusX = 15,
+                        RadiusY = 15,
+                        Fill = remplissage,
+                        Stroke = contour,
+                        StrokeThickness = epaisseur
+                    };
+                    break;
+
                 case ShapeType.Ellipse:
                     visual = new Ellipse
                     {
-                        Fill = Brushes.LightBlue,
-                        Stroke = Brushes.Black,
-                        StrokeThickness = 2
+                        Fill = remplissage,
+                        Stroke = contour,
+                        StrokeThickness = epaisseur
                     };
                     break;
 
@@ -650,65 +766,222 @@ namespace PresentationApp.UI.Canvas
                     {
                         X1 = 0,
                         Y1 = 0,
-                        X2 = element.Width,
-                        Y2 = element.Height,
-                        Stroke = Brushes.Black,
-                        StrokeThickness = 2
+                        X2 = largeur,
+                        Y2 = hauteur,
+                        Stroke = contour,
+                        StrokeThickness = epaisseur
                     };
                     break;
-
-                case ShapeType.Arrow:
-                    return CreateArrow(element);
 
                 default:
-                    visual = new Rectangle
-                    {
-                        Fill = Brushes.LightBlue,
-                        Stroke = Brushes.Black,
-                        StrokeThickness = 2
-                    };
-                    break;
+                    return CreerPolygone(
+                        element.ShapeType,
+                        largeur,
+                        hauteur,
+                        remplissage,
+                        contour,
+                        epaisseur);
             }
 
-            visual.Width = element.Width;
-            visual.Height = element.Height;
+            visual.Width = largeur;
+            visual.Height = hauteur;
 
             return visual;
         }
 
-        private FrameworkElement CreateArrow(ShapeElement element)
+        private FrameworkElement CreerPolygone(
+            ShapeType type,
+            double largeur,
+            double hauteur,
+            Brush remplissage,
+            Brush contour,
+            double epaisseur)
         {
-            var arrow = new Grid
+            PointCollection points = new();
+
+            switch (type)
             {
-                Width = element.Width,
-                Height = element.Height
+                case ShapeType.Diamond:
+                    points = Points(
+                        (0.5, 0), (1, 0.5), (0.5, 1), (0, 0.5));
+                    break;
+
+                case ShapeType.Triangle:
+                    points = Points(
+                        (0.5, 0), (1, 1), (0, 1));
+                    break;
+
+                case ShapeType.InvertedTriangle:
+                    points = Points(
+                        (0, 0), (1, 0), (0.5, 1));
+                    break;
+
+                case ShapeType.Pentagon:
+                    points = Points(
+                        (0.5, 0), (1, 0.38), (0.81, 1),
+                        (0.19, 1), (0, 0.38));
+                    break;
+
+                case ShapeType.Hexagon:
+                    points = Points(
+                        (0.25, 0), (0.75, 0), (1, 0.5),
+                        (0.75, 1), (0.25, 1), (0, 0.5));
+                    break;
+
+                case ShapeType.SemiCircle:
+                    points = CreerPointsDemiCercle();
+                    break;
+
+                case ShapeType.Cross:
+                    points = Points(
+                        (0.35, 0), (0.65, 0),
+                        (0.65, 0.35), (1, 0.35),
+                        (1, 0.65), (0.65, 0.65),
+                        (0.65, 1), (0.35, 1),
+                        (0.35, 0.65), (0, 0.65),
+                        (0, 0.35), (0.35, 0.35));
+                    break;
+
+                case ShapeType.Plus:
+                    points = Points(
+                        (0.4, 0), (0.6, 0),
+                        (0.6, 0.4), (1, 0.4),
+                        (1, 0.6), (0.6, 0.6),
+                        (0.6, 1), (0.4, 1),
+                        (0.4, 0.6), (0, 0.6),
+                        (0, 0.4), (0.4, 0.4));
+                    break;
+
+                case ShapeType.Star5:
+                    points = CreerEtoile(5);
+                    break;
+
+                case ShapeType.Star6:
+                    points = CreerEtoile(6);
+                    break;
+
+                case ShapeType.Arrow:
+                    points = Points(
+                        (0, 0.35), (0.68, 0.35),
+                        (0.68, 0.05), (1, 0.5),
+                        (0.68, 0.95), (0.68, 0.65),
+                        (0, 0.65));
+                    break;
+
+                case ShapeType.ArrowLeft:
+                    points = Points(
+                        (1, 0.35), (0.32, 0.35),
+                        (0.32, 0.05), (0, 0.5),
+                        (0.32, 0.95), (0.32, 0.65),
+                        (1, 0.65));
+                    break;
+
+                case ShapeType.ArrowUp:
+                    points = Points(
+                        (0.35, 1), (0.35, 0.32),
+                        (0.05, 0.32), (0.5, 0),
+                        (0.95, 0.32), (0.65, 0.32),
+                        (0.65, 1));
+                    break;
+
+                case ShapeType.ArrowDown:
+                    points = Points(
+                        (0.35, 0), (0.65, 0),
+                        (0.65, 0.68), (0.95, 0.68),
+                        (0.5, 1), (0.05, 0.68),
+                        (0.35, 0.68));
+                    break;
+
+                case ShapeType.DoubleArrow:
+                    points = Points(
+                        (0, 0.5), (0.25, 0.05),
+                        (0.25, 0.35), (0.75, 0.35),
+                        (0.75, 0.05), (1, 0.5),
+                        (0.75, 0.95), (0.75, 0.65),
+                        (0.25, 0.65), (0.25, 0.95));
+                    break;
+
+                default:
+                    points = Points(
+                        (0, 0), (1, 0), (1, 1), (0, 1));
+                    break;
+            }
+
+            var polygone = new Polygon
+            {
+                Width = largeur,
+                Height = hauteur,
+                Points = points,
+                Fill = remplissage,
+                Stroke = contour,
+                StrokeThickness = epaisseur,
+                Stretch = Stretch.Fill
             };
 
-            var line = new Line
+            return polygone;
+        }
+
+        private PointCollection Points(
+            params (double X, double Y)[] coordonnees)
+        {
+            var resultat = new PointCollection();
+
+            foreach (var point in coordonnees)
             {
-                X1 = 0,
-                Y1 = element.Height / 2,
-                X2 = element.Width - 12,
-                Y2 = element.Height / 2,
-                Stroke = Brushes.Black,
-                StrokeThickness = 2
-            };
+                resultat.Add(new Point(point.X, point.Y));
+            }
 
-            var head = new Polygon
+            return resultat;
+        }
+
+        private PointCollection CreerEtoile(int branches)
+        {
+            var points = new PointCollection();
+
+            double centreX = 0.5;
+            double centreY = 0.5;
+
+            double rayonExterieur = 0.5;
+            double rayonInterieur = 0.22;
+
+            for (int i = 0; i < branches * 2; i++)
             {
-                Points = new PointCollection
-                {
-                    new Point(element.Width, element.Height / 2),
-                    new Point(element.Width - 14, element.Height / 2 - 8),
-                    new Point(element.Width - 14, element.Height / 2 + 8)
-                },
-                Fill = Brushes.Black
-            };
+                double angle = -Math.PI / 2 +
+                    i * Math.PI / branches;
 
-            arrow.Children.Add(line);
-            arrow.Children.Add(head);
+                double rayon = i % 2 == 0
+                    ? rayonExterieur
+                    : rayonInterieur;
 
-            return arrow;
+                double x = centreX + Math.Cos(angle) * rayon;
+                double y = centreY + Math.Sin(angle) * rayon;
+
+                points.Add(new Point(x, y));
+            }
+
+            return points;
+        }
+
+        private PointCollection CreerPointsDemiCercle()
+        {
+            var points = new PointCollection();
+
+            points.Add(new Point(0, 1));
+
+            for (int i = 0; i <= 20; i++)
+            {
+                double angle = Math.PI +
+                    i * Math.PI / 20;
+
+                double x = 0.5 + 0.5 * Math.Cos(angle);
+                double y = 1 - 0.5 * Math.Sin(angle);
+
+                points.Add(new Point(x, y));
+            }
+
+            points.Add(new Point(1, 1));
+
+            return points;
         }
 
         private FrameworkElement CreateImage(ImageElement element)
