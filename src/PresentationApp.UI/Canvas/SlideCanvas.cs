@@ -479,6 +479,29 @@ namespace PresentationApp.UI.Canvas
             return null;
         }
 
+        // Convertit une couleur du modèle en pinceau WPF.
+        private Brush ConvertirCouleurTexte(string? couleur)
+        {
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(couleur))
+                {
+                    var resultat =
+                        ColorConverter.ConvertFromString(couleur);
+
+                    if (resultat is Color couleurConvertie)
+                        return new SolidColorBrush(couleurConvertie);
+                }
+            }
+            catch
+            {
+                // Utilise le noir si la couleur est incorrecte.
+            }
+
+            return Brushes.Black;
+        }
+
+        // Crée l'éditeur en respectant les propriétés de ElementStyle.
         private TextBox CreerEditeurTexte(TextElement element)
         {
             bool estTitre =
@@ -491,20 +514,51 @@ namespace PresentationApp.UI.Canvas
                 element.Text == TexteTitre ||
                 element.Text == TexteSousTitre;
 
+            ElementStyle style = element.Style ?? new ElementStyle();
+
+            double taillePolice = style.FontSize > 0
+                ? style.FontSize
+                : 18;
+
+            // Conserve l'apparence initiale des titres et sous-titres.
+            if (taillePolice == 18 && estTitre)
+                taillePolice = 34;
+            else if (taillePolice == 18 && estSousTitre)
+                taillePolice = 24;
+
+            FontFamily famillePolice;
+
+            try
+            {
+                famillePolice = new FontFamily(
+                    string.IsNullOrWhiteSpace(style.FontFamily)
+                        ? "Segoe UI"
+                        : style.FontFamily);
+            }
+            catch
+            {
+                famillePolice = new FontFamily("Segoe UI");
+            }
+
             var zoneTexte = new TextBox
             {
                 Width = element.Width,
                 Height = element.Height,
 
-                FontSize = estTitre ? 34 : 24,
+                FontFamily = famillePolice,
+                FontSize = taillePolice,
 
-                FontWeight = estTitre
+                FontWeight = style.IsBold || estTitre
                     ? FontWeights.Bold
                     : FontWeights.Normal,
 
+                FontStyle = style.IsItalic
+                    ? FontStyles.Italic
+                    : FontStyles.Normal,
+
                 Foreground = estPlaceholder
                     ? Brushes.Gray
-                    : Brushes.Black,
+                    : ConvertirCouleurTexte(style.TextColor),
 
                 Background = Brushes.Transparent,
                 BorderBrush = Brushes.Transparent,
@@ -527,7 +581,13 @@ namespace PresentationApp.UI.Canvas
             zoneTexte.TextChanged += (s, e) =>
             {
                 element.Text = zoneTexte.Text;
-                zoneTexte.Foreground = Brushes.Black;
+
+                if (zoneTexte.Text != TexteTitre &&
+                    zoneTexte.Text != TexteSousTitre)
+                {
+                    zoneTexte.Foreground =
+                        ConvertirCouleurTexte(style.TextColor);
+                }
 
                 NotifierModification();
             };
@@ -538,7 +598,9 @@ namespace PresentationApp.UI.Canvas
                     zoneTexte.Text == TexteSousTitre)
                 {
                     zoneTexte.Text = string.Empty;
-                    zoneTexte.Foreground = Brushes.Black;
+
+                    zoneTexte.Foreground =
+                        ConvertirCouleurTexte(style.TextColor);
                 }
 
                 zoneTexte.BorderBrush = Brushes.DodgerBlue;
@@ -554,11 +616,13 @@ namespace PresentationApp.UI.Canvas
                         zoneTexte.Text = TexteSousTitre;
                 }
 
-                zoneTexte.Foreground =
+                bool placeholderActuel =
                     zoneTexte.Text == TexteTitre ||
-                    zoneTexte.Text == TexteSousTitre
-                        ? Brushes.Gray
-                        : Brushes.Black;
+                    zoneTexte.Text == TexteSousTitre;
+
+                zoneTexte.Foreground = placeholderActuel
+                    ? Brushes.Gray
+                    : ConvertirCouleurTexte(style.TextColor);
 
                 zoneTexte.BorderBrush = Brushes.Transparent;
             };

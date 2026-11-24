@@ -38,34 +38,101 @@
             <Setter Property="Margin" Value="2,5,2,0"/>
         </Style>
 
-        <!-- Aperçu des éléments texte -->
+        <!-- MINIATURE : ELEMENT TEXTE -->
         <DataTemplate DataType="{x:Type models:TextElement}">
             <TextBlock Text="{Binding Text}"
-               Width="{Binding Width}"
-               Height="{Binding Height}"
-               FontSize="{Binding Style.FontSize}"
-               FontWeight="Normal"
-               Foreground="Black"
-               TextWrapping="Wrap"
-               ClipToBounds="True"/>
+                       Width="{Binding Width}"
+                       Height="{Binding Height}"
+                       FontFamily="{Binding Style.FontFamily}"
+                       FontSize="{Binding Style.FontSize}"
+                       Foreground="{Binding Style.TextColor,
+                                            FallbackValue=Black}"
+                       TextWrapping="Wrap"
+                       ClipToBounds="True"
+                       RenderTransformOrigin="0.5,0.5">
+
+                <TextBlock.RenderTransform>
+                    <RotateTransform Angle="{Binding Rotation}"/>
+                </TextBlock.RenderTransform>
+
+                <TextBlock.Style>
+                    <Style TargetType="TextBlock">
+                        <Setter Property="FontWeight" Value="Normal"/>
+                        <Setter Property="FontStyle" Value="Normal"/>
+                        <Setter Property="TextDecorations" Value="{x:Null}"/>
+
+                        <Style.Triggers>
+
+                            <DataTrigger Binding="{Binding Style.IsBold}"
+                                         Value="True">
+                                <Setter Property="FontWeight"
+                                        Value="Bold"/>
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding Style.IsItalic}"
+                                         Value="True">
+                                <Setter Property="FontStyle"
+                                        Value="Italic"/>
+                            </DataTrigger>
+
+                            <DataTrigger Binding="{Binding Style.IsUnderline}"
+                                         Value="True">
+                                <Setter Property="TextDecorations"
+                                        Value="Underline"/>
+                            </DataTrigger>
+
+                        </Style.Triggers>
+                    </Style>
+                </TextBlock.Style>
+
+            </TextBlock>
         </DataTemplate>
 
-        <!-- Aperçu des formes -->
+        <!-- MINIATURE : ELEMENT FORME -->
         <DataTemplate DataType="{x:Type models:ShapeElement}">
             <Rectangle Width="{Binding Width}"
                        Height="{Binding Height}"
-                       Fill="#D9E5F2"
-                       Stroke="#555555"
-                       StrokeThickness="1"/>
+                       Fill="{Binding Style.FillColor,
+                                      FallbackValue=#D9E5F2}"
+                       Stroke="{Binding Style.StrokeColor,
+                                        FallbackValue=#555555}"
+                       StrokeThickness="{Binding Style.StrokeThickness}"
+                       RenderTransformOrigin="0.5,0.5">
+
+                <Rectangle.RenderTransform>
+                    <RotateTransform Angle="{Binding Rotation}"/>
+                </Rectangle.RenderTransform>
+
+                <Rectangle.Style>
+                    <Style TargetType="Rectangle">
+                        <Setter Property="Visibility" Value="Visible"/>
+
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding ShapeType}"
+                                         Value="{x:Static models:ShapeType.Ellipse}">
+                                <Setter Property="RadiusX" Value="50"/>
+                                <Setter Property="RadiusY" Value="50"/>
+                                <Setter Property="Visibility" Value="Collapsed"/>
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Rectangle.Style>
+            </Rectangle>
         </DataTemplate>
 
-        <!-- Aperçu des images -->
+        <!-- MINIATURE : ELEMENT IMAGE -->
         <DataTemplate DataType="{x:Type models:ImageElement}">
             <Border Width="{Binding Width}"
                     Height="{Binding Height}"
                     Background="#E5E5E5"
                     BorderBrush="#999999"
-                    BorderThickness="1">
+                    BorderThickness="1"
+                    RenderTransformOrigin="0.5,0.5">
+
+                <Border.RenderTransform>
+                    <RotateTransform Angle="{Binding Rotation}"/>
+                </Border.RenderTransform>
+
                 <TextBlock Text="Image"
                            HorizontalAlignment="Center"
                            VerticalAlignment="Center"
@@ -120,17 +187,31 @@
         <Border Grid.Row="1" Background="White">
             <StackPanel Orientation="Horizontal"
                         VerticalAlignment="Center">
-                <Button Style="{StaticResource TabButton}" Content="Fichier"/>
+                <Button Style="{StaticResource TabButton}"
+                        Content="Fichier"/>
+
                 <Button Style="{StaticResource TabButton}"
                         Content="Accueil"
                         FontWeight="Bold"
                         Foreground="#B7472A"/>
-                <Button Style="{StaticResource TabButton}" Content="Insertion"/>
-                <Button Style="{StaticResource TabButton}" Content="Création"/>
-                <Button Style="{StaticResource TabButton}" Content="Transitions"/>
-                <Button Style="{StaticResource TabButton}" Content="Animations"/>
-                <Button Style="{StaticResource TabButton}" Content="Diaporama"/>
-                <Button Style="{StaticResource TabButton}" Content="Affichage"/>
+
+                <Button Style="{StaticResource TabButton}"
+                        Content="Insertion"/>
+
+                <Button Style="{StaticResource TabButton}"
+                        Content="Création"/>
+
+                <Button Style="{StaticResource TabButton}"
+                        Content="Transitions"/>
+
+                <Button Style="{StaticResource TabButton}"
+                        Content="Animations"/>
+
+                <Button Style="{StaticResource TabButton}"
+                        Content="Diaporama"/>
+
+                <Button Style="{StaticResource TabButton}"
+                        Content="Affichage"/>
             </StackPanel>
         </Border>
 
@@ -149,11 +230,13 @@
                         <Button Content="Coller"
                                 FontSize="13"
                                 Padding="12,18"/>
+
                         <StackPanel>
                             <Button Content="Couper"/>
                             <Button Content="Copier"/>
                         </StackPanel>
                     </StackPanel>
+
                     <TextBlock Text="Presse-papiers"
                                Style="{StaticResource GroupTitle}"/>
                 </StackPanel>
@@ -168,6 +251,7 @@
                         <Button Content="Couleur"/>
                         <Button Content="Taille"/>
                     </WrapPanel>
+
                     <TextBlock Text="Texte"
                                Style="{StaticResource GroupTitle}"/>
                 </StackPanel>
@@ -181,6 +265,7 @@
                         <Button Content="Ligne"/>
                         <Button Content="Flèche"/>
                     </WrapPanel>
+
                     <TextBlock Text="Formes"
                                Style="{StaticResource GroupTitle}"/>
                 </StackPanel>
@@ -193,6 +278,7 @@
                         <Button Content="Arrière-plan"/>
                         <Button Content="Rotation"/>
                     </WrapPanel>
+
                     <TextBlock Text="Modification"
                                Style="{StaticResource GroupTitle}"/>
                 </StackPanel>
@@ -205,6 +291,7 @@
                                 Click="BtnNouvelleDiapositive_Click"/>
                         <Button Content="Supprimer"/>
                     </WrapPanel>
+
                     <TextBlock Text="Diapositives"
                                Style="{StaticResource GroupTitle}"/>
                 </StackPanel>
@@ -268,10 +355,10 @@
                                         <Viewbox Stretch="Uniform">
                                             <Canvas Width="960"
                                                     Height="540"
-                                                    Background="White">
+                                                    Background="{Binding BackgroundColor,
+                                                                 FallbackValue=White}">
 
-                                                <ItemsControl
-                                                    ItemsSource="{Binding Elements}">
+                                                <ItemsControl ItemsSource="{Binding Elements}">
 
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
@@ -283,8 +370,10 @@
                                                         <Style TargetType="ContentPresenter">
                                                             <Setter Property="Canvas.Left"
                                                                     Value="{Binding X}"/>
+
                                                             <Setter Property="Canvas.Top"
                                                                     Value="{Binding Y}"/>
+
                                                             <Setter Property="Panel.ZIndex"
                                                                     Value="{Binding ZIndex}"/>
                                                         </Style>
