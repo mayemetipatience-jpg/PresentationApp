@@ -79,7 +79,12 @@ public partial class MainWindow : Window
             Y = 130,
             Width = 760,
             Height = 90,
-            Text = TexteTitre
+            Text = TexteTitre,
+            Style = new ElementStyle
+            {
+                TextAlignment = "Center",
+                FontSize = 18
+            }
         });
 
         diapositive.Elements.Add(new TextElement
@@ -88,7 +93,12 @@ public partial class MainWindow : Window
             Y = 240,
             Width = 760,
             Height = 70,
-            Text = TexteSousTitre
+            Text = TexteSousTitre,
+            Style = new ElementStyle
+            {
+                TextAlignment = "Center",
+                FontSize = 18
+            }
         });
 
         return diapositive;
@@ -111,8 +121,7 @@ public partial class MainWindow : Window
     {
         int nouvelOrdre = _presentation.Slides.Count + 1;
 
-        var nouvelleDiapositive =
-            CreerDiapositive(nouvelOrdre);
+        var nouvelleDiapositive = CreerDiapositive(nouvelOrdre);
 
         _presentation.Slides.Add(nouvelleDiapositive);
 
@@ -125,9 +134,7 @@ public partial class MainWindow : Window
         RoutedEventArgs e)
     {
         if (lstDiapositives.SelectedItem is Slide slide)
-        {
             slideCanvas.ActiverInsertionTexte(slide);
-        }
     }
 
     // INSERTION DES FORMES
@@ -175,7 +182,6 @@ public partial class MainWindow : Window
         slide.Elements.Add(forme);
 
         slideCanvas.DisplaySlide(slide);
-
         lstDiapositives.Items.Refresh();
     }
 
@@ -185,18 +191,20 @@ public partial class MainWindow : Window
         object sender,
         RoutedEventArgs e)
     {
-        if (_elementActuel == null)
+        SlideElement? element = slideCanvas.ElementSelectionne
+            ?? _elementActuel;
+
+        if (element == null)
         {
             MessageBox.Show(
                 "Sélectionnez un élément à copier.",
                 "Copier",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
-
             return;
         }
 
-        _elementCopie = ClonerElement(_elementActuel);
+        _elementCopie = ClonerElement(element);
     }
 
     // COUPER
@@ -205,18 +213,20 @@ public partial class MainWindow : Window
         object sender,
         RoutedEventArgs e)
     {
-        if (_elementActuel == null)
+        SlideElement? element = slideCanvas.ElementSelectionne
+            ?? _elementActuel;
+
+        if (element == null)
         {
             MessageBox.Show(
                 "Sélectionnez un élément à couper.",
                 "Couper",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
-
             return;
         }
 
-        _elementCopie = ClonerElement(_elementActuel);
+        _elementCopie = ClonerElement(element);
 
         SupprimerElementSelectionne();
     }
@@ -234,7 +244,6 @@ public partial class MainWindow : Window
                 "Coller",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
-
             return;
         }
 
@@ -249,11 +258,10 @@ public partial class MainWindow : Window
         slide.Elements.Add(nouvelElement);
 
         slideCanvas.DisplaySlide(slide);
-
         lstDiapositives.Items.Refresh();
     }
 
-    // CLONAGE D'UN ELEMENT
+    // CLONAGE
 
     private SlideElement ClonerElement(SlideElement element)
     {
@@ -311,7 +319,7 @@ public partial class MainWindow : Window
         return copie;
     }
 
-    // INSERER UNE IMAGE
+    // INSERTION D'UNE IMAGE
 
     private void BtnImage_Click(
         object sender,
@@ -323,8 +331,7 @@ public partial class MainWindow : Window
         OpenFileDialog dialogue = new()
         {
             Title = "Choisir une image",
-            Filter =
-                "Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif"
+            Filter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif"
         };
 
         if (dialogue.ShowDialog() != true)
@@ -342,11 +349,10 @@ public partial class MainWindow : Window
         slide.Elements.Add(nouvelImage);
 
         slideCanvas.DisplaySlide(slide);
-
         lstDiapositives.Items.Refresh();
     }
 
-    // CHANGER LE FOND DE LA DIAPOSITIVE
+    // ARRIERE-PLAN
 
     private void BtnArrierePlan_Click(
         object sender,
@@ -358,15 +364,13 @@ public partial class MainWindow : Window
         _indexCouleurFond =
             (_indexCouleurFond + 1) % _couleursFond.Length;
 
-        slide.BackgroundColor =
-            _couleursFond[_indexCouleurFond];
+        slide.BackgroundColor = _couleursFond[_indexCouleurFond];
 
         slideCanvas.DisplaySlide(slide);
-
         lstDiapositives.Items.Refresh();
     }
 
-    // ROTATION DE 90 DEGRES
+    // ROTATION
 
     private void BtnRotation_Click(
         object sender,
@@ -379,7 +383,6 @@ public partial class MainWindow : Window
                 "Rotation",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
-
             return;
         }
 
@@ -387,7 +390,6 @@ public partial class MainWindow : Window
             (_elementActuel.Rotation + 90) % 360;
 
         slideCanvas.ActualiserElementSelectionne();
-
         SlideCanvas_ElementSelectionChangee(_elementActuel);
     }
 
@@ -402,16 +404,41 @@ public partial class MainWindow : Window
 
     private void SupprimerElementSelectionne()
     {
-        if (_elementActuel == null)
-            return;
-
         if (lstDiapositives.SelectedItem is not Slide slide)
             return;
 
-        slide.Elements.Remove(_elementActuel);
+        // Récupérer l'élément réellement sélectionné sur le canvas.
+        SlideElement? elementASupprimer =
+            slideCanvas.ElementSelectionne ?? _elementActuel;
 
+        if (elementASupprimer == null)
+        {
+            MessageBox.Show(
+                "Sélectionnez d'abord un élément à supprimer.",
+                "Suppression",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        // Vérifier que l'élément appartient bien à la diapositive.
+        bool elementSupprime =
+            slide.Elements.Remove(elementASupprimer);
+
+        if (!elementSupprime)
+        {
+            MessageBox.Show(
+                "Impossible de trouver cet élément dans la diapositive.",
+                "Suppression",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        // Réinitialiser la sélection.
         _elementActuel = null;
 
+        // Reconstruire le canvas sans l'élément supprimé.
         slideCanvas.DisplaySlide(slide);
 
         lstDiapositives.Items.Refresh();
@@ -433,7 +460,6 @@ public partial class MainWindow : Window
                 "Suppression",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
-
             return;
         }
 
@@ -451,9 +477,7 @@ public partial class MainWindow : Window
         _presentation.Slides.Remove(slide);
 
         for (int i = 0; i < _presentation.Slides.Count; i++)
-        {
             _presentation.Slides[i].Order = i + 1;
-        }
 
         lstDiapositives.Items.Refresh();
 
@@ -483,11 +507,8 @@ public partial class MainWindow : Window
             return;
 
         slideCanvas.ActualiserElementSelectionne();
-
         lstDiapositives.Items.Refresh();
     }
-
-    // CHOIX DE LA POLICE
 
     private void CmbPolice_SelectionChanged(
         object sender,
@@ -506,11 +527,8 @@ public partial class MainWindow : Window
             return;
 
         texte.Style.FontFamily = police;
-
         ActualiserFormatageTexte();
     }
-
-    // CHOIX DE LA TAILLE
 
     private void CmbTaille_SelectionChanged(
         object sender,
@@ -533,11 +551,8 @@ public partial class MainWindow : Window
             return;
 
         texte.Style.FontSize = taille;
-
         ActualiserFormatageTexte();
     }
-
-    // CHOIX DE LA COULEUR DU TEXTE
 
     private void CmbCouleurTexte_SelectionChanged(
         object sender,
@@ -554,11 +569,8 @@ public partial class MainWindow : Window
             return;
 
         texte.Style.TextColor = item.Tag.ToString()!;
-
         ActualiserFormatageTexte();
     }
-
-    // GRAS
 
     private void BtnGras_Click(
         object sender,
@@ -568,13 +580,10 @@ public partial class MainWindow : Window
             return;
 
         TextElement texte = (TextElement)_elementActuel!;
-
         texte.Style.IsBold = !texte.Style.IsBold;
 
         ActualiserFormatageTexte();
     }
-
-    // ITALIQUE
 
     private void BtnItalique_Click(
         object sender,
@@ -584,13 +593,10 @@ public partial class MainWindow : Window
             return;
 
         TextElement texte = (TextElement)_elementActuel!;
-
         texte.Style.IsItalic = !texte.Style.IsItalic;
 
         ActualiserFormatageTexte();
     }
-
-    // SOULIGNE
 
     private void BtnSouligne_Click(
         object sender,
@@ -600,7 +606,6 @@ public partial class MainWindow : Window
             return;
 
         TextElement texte = (TextElement)_elementActuel!;
-
         texte.Style.IsUnderline = !texte.Style.IsUnderline;
 
         ActualiserFormatageTexte();
@@ -647,10 +652,26 @@ public partial class MainWindow : Window
         object sender,
         KeyEventArgs e)
     {
-        if (Keyboard.FocusedElement is TextBox)
-            return;
+        bool toucheCtrl =
+            Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
 
-        if (Keyboard.Modifiers == ModifierKeys.Control)
+        // Ctrl + Suppr : supprimer toute la zone sélectionnée,
+        // même lorsque le curseur est dans un TextBox.
+        if (e.Key == Key.Delete && toucheCtrl)
+        {
+            SupprimerElementSelectionne();
+            e.Handled = true;
+            return;
+        }
+
+        // Lorsqu'on écrit dans une zone de texte,
+        // Suppr doit continuer à supprimer les caractères.
+        if (Keyboard.FocusedElement is TextBox)
+        {
+            return;
+        }
+
+        if (toucheCtrl)
         {
             switch (e.Key)
             {
@@ -724,14 +745,10 @@ public partial class MainWindow : Window
         }
 
         if (element is TextElement texte)
-        {
             SelectionnerValeursFormatage(texte);
-        }
 
         _actualisationEnCours = false;
     }
-
-    // MISE A JOUR DES COMMANDES DE FORMATAGE
 
     private void SelectionnerValeursFormatage(TextElement texte)
     {

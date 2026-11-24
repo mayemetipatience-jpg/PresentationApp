@@ -27,20 +27,18 @@ namespace PresentationApp.UI.Canvas
         private Point _positionInitiale;
         private double _positionXInitiale;
         private double _positionYInitiale;
-
         private bool _deplacementEnCours;
 
         private const double TaillePoignee = 10;
         private const double TailleMinimum = 30;
 
-        private const string TexteTitre =
-            "Cliquez pour ajouter un titre";
-
-        private const string TexteSousTitre =
-            "Cliquez pour ajouter un sous-titre";
+        private const string TexteTitre = "Cliquez pour ajouter un titre";
+        private const string TexteSousTitre = "Cliquez pour ajouter un sous-titre";
 
         public event Action<SlideElement?>? ElementSelectionChangee;
         public event Action? DiapositiveModifiee;
+
+        public SlideElement? ElementSelectionne => _elementSelectionne;
 
         public SlideCanvas()
         {
@@ -144,7 +142,6 @@ namespace PresentationApp.UI.Canvas
 
                 _modeInsertionTexte = false;
                 _slidePourInsertion = null;
-
                 Cursor = Cursors.Arrow;
 
                 SelectionnerElement(nouvelElement, zoneTexte);
@@ -175,7 +172,6 @@ namespace PresentationApp.UI.Canvas
 
             _modeInsertionTexte = false;
             _slidePourInsertion = null;
-
             Cursor = Cursors.Arrow;
 
             if (slide == null)
@@ -229,10 +225,7 @@ namespace PresentationApp.UI.Canvas
                 _positionInitiale = e.GetPosition(this);
                 _positionXInitiale = element.X;
                 _positionYInitiale = element.Y;
-
                 _deplacementEnCours = false;
-
-                Mouse.Capture(visual);
             };
 
             visual.PreviewMouseMove += (sender, e) =>
@@ -277,9 +270,6 @@ namespace PresentationApp.UI.Canvas
 
             visual.PreviewMouseLeftButtonUp += (sender, e) =>
             {
-                if (Mouse.Captured == visual)
-                    Mouse.Capture(null);
-
                 _deplacementEnCours = false;
             };
         }
@@ -310,7 +300,6 @@ namespace PresentationApp.UI.Canvas
             ElementSelectionChangee?.Invoke(null);
         }
 
-        // Actualise la position, les dimensions et le style de l'élément.
         public void ActualiserElementSelectionne()
         {
             if (_elementSelectionne == null ||
@@ -326,7 +315,6 @@ namespace PresentationApp.UI.Canvas
             _visuelSelectionne.RenderTransform =
                 new RotateTransform(_elementSelectionne.Rotation);
 
-            // NOUVEAU : actualisation du formatage du texte.
             if (_elementSelectionne is TextElement texte &&
                 _visuelSelectionne is TextBox zoneTexte)
             {
@@ -334,11 +322,22 @@ namespace PresentationApp.UI.Canvas
             }
 
             ActualiserCadreSelection();
-
             NotifierModification();
         }
 
-        // Applique le style du modèle au TextBox visible.
+        private TextAlignment ConvertirAlignement(string? alignement)
+        {
+            if (Enum.TryParse(
+                    alignement,
+                    true,
+                    out TextAlignment resultat))
+            {
+                return resultat;
+            }
+
+            return TextAlignment.Left;
+        }
+
         private void ActualiserStyleTexte(
             TextElement element,
             TextBox zoneTexte)
@@ -359,7 +358,6 @@ namespace PresentationApp.UI.Canvas
                 ? style.FontSize
                 : 18;
 
-            // Conserve la taille spéciale des espaces réservés.
             if (taillePolice == 18 && estTitre)
                 taillePolice = 34;
             else if (taillePolice == 18 && estSousTitre)
@@ -393,6 +391,9 @@ namespace PresentationApp.UI.Canvas
                 style.IsUnderline
                     ? TextDecorations.Underline
                     : null;
+
+            zoneTexte.TextAlignment =
+                ConvertirAlignement(style.TextAlignment);
 
             zoneTexte.Foreground = estPlaceholder
                 ? Brushes.Gray
@@ -568,7 +569,6 @@ namespace PresentationApp.UI.Canvas
             }
             catch
             {
-                // Utilise la couleur par défaut.
             }
 
             return couleurParDefaut;
@@ -649,9 +649,7 @@ namespace PresentationApp.UI.Canvas
 
                 VerticalContentAlignment = VerticalAlignment.Center,
 
-                TextAlignment = estTitre || estSousTitre
-                    ? TextAlignment.Center
-                    : TextAlignment.Left,
+                TextAlignment = ConvertirAlignement(style.TextAlignment),
 
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
 
@@ -661,14 +659,6 @@ namespace PresentationApp.UI.Canvas
             zoneTexte.TextChanged += (s, e) =>
             {
                 element.Text = zoneTexte.Text;
-
-                if (zoneTexte.Text != TexteTitre &&
-                    zoneTexte.Text != TexteSousTitre)
-                {
-                    zoneTexte.Foreground =
-                        ConvertirCouleurTexte(element.Style?.TextColor);
-                }
-
                 NotifierModification();
             };
 
@@ -678,7 +668,6 @@ namespace PresentationApp.UI.Canvas
                     zoneTexte.Text == TexteSousTitre)
                 {
                     zoneTexte.Text = string.Empty;
-
                     zoneTexte.Foreground =
                         ConvertirCouleurTexte(element.Style?.TextColor);
                 }
@@ -710,7 +699,6 @@ namespace PresentationApp.UI.Canvas
             return zoneTexte;
         }
 
-        // Création des formes.
         private FrameworkElement CreateShape(ShapeElement element)
         {
             Brush remplissage =
@@ -833,6 +821,7 @@ namespace PresentationApp.UI.Canvas
                     break;
 
                 case ShapeType.Cross:
+                case ShapeType.Plus:
                     points = Points(
                         (0.35, 0), (0.65, 0),
                         (0.65, 0.35), (1, 0.35),
@@ -840,16 +829,6 @@ namespace PresentationApp.UI.Canvas
                         (0.65, 1), (0.35, 1),
                         (0.35, 0.65), (0, 0.65),
                         (0, 0.35), (0.35, 0.35));
-                    break;
-
-                case ShapeType.Plus:
-                    points = Points(
-                        (0.4, 0), (0.6, 0),
-                        (0.6, 0.4), (1, 0.4),
-                        (1, 0.6), (0.6, 0.6),
-                        (0.6, 1), (0.4, 1),
-                        (0.4, 0.6), (0, 0.6),
-                        (0, 0.4), (0.4, 0.4));
                     break;
 
                 case ShapeType.Star5:
@@ -907,7 +886,7 @@ namespace PresentationApp.UI.Canvas
                     break;
             }
 
-            var polygone = new Polygon
+            return new Polygon
             {
                 Width = largeur,
                 Height = hauteur,
@@ -917,8 +896,6 @@ namespace PresentationApp.UI.Canvas
                 StrokeThickness = epaisseur,
                 Stretch = Stretch.Fill
             };
-
-            return polygone;
         }
 
         private PointCollection Points(
@@ -927,9 +904,7 @@ namespace PresentationApp.UI.Canvas
             var resultat = new PointCollection();
 
             foreach (var point in coordonnees)
-            {
                 resultat.Add(new Point(point.X, point.Y));
-            }
 
             return resultat;
         }
@@ -970,8 +945,7 @@ namespace PresentationApp.UI.Canvas
 
             for (int i = 0; i <= 20; i++)
             {
-                double angle = Math.PI +
-                    i * Math.PI / 20;
+                double angle = Math.PI + i * Math.PI / 20;
 
                 double x = 0.5 + 0.5 * Math.Cos(angle);
                 double y = 1 - 0.5 * Math.Sin(angle);
@@ -986,23 +960,23 @@ namespace PresentationApp.UI.Canvas
 
         private FrameworkElement CreateImage(ImageElement element)
         {
-            var visual = new Image
+            var image = new Image
             {
                 Width = element.Width,
                 Height = element.Height,
-                Stretch = Stretch.Fill
+                Stretch = Stretch.Fill,
+                IsHitTestVisible = false
             };
 
             try
             {
                 if (!string.IsNullOrWhiteSpace(element.ImagePath))
                 {
-                    string path =
-                        System.IO.Path.GetFullPath(element.ImagePath);
+                    string path = element.ImagePath;
 
                     if (File.Exists(path))
                     {
-                        visual.Source = new BitmapImage(
+                        image.Source = new BitmapImage(
                             new Uri(path, UriKind.Absolute));
                     }
                 }
@@ -1012,7 +986,13 @@ namespace PresentationApp.UI.Canvas
                 // L'image ne peut pas être chargée.
             }
 
-            return visual;
+            return new Border
+            {
+                Width = element.Width,
+                Height = element.Height,
+                Background = Brushes.Transparent,
+                Child = image
+            };
         }
     }
 }
