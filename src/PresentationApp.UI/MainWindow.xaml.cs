@@ -2,6 +2,7 @@
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using PresentationApp.Core.Models;
 
 namespace PresentationApp.UI;
@@ -29,6 +30,8 @@ public partial class MainWindow : Window
 
         slideCanvas.DiapositiveModifiee +=
             SlideCanvas_DiapositiveModifiee;
+
+        PreviewKeyDown += MainWindow_PreviewKeyDown;
 
         InitialiserPresentation();
     }
@@ -81,6 +84,7 @@ public partial class MainWindow : Window
     {
         if (lstDiapositives.SelectedItem is Slide slide)
         {
+            _elementActuel = null;
             slideCanvas.DisplaySlide(slide);
         }
     }
@@ -107,6 +111,112 @@ public partial class MainWindow : Window
         if (lstDiapositives.SelectedItem is Slide slide)
         {
             slideCanvas.ActiverInsertionTexte(slide);
+        }
+    }
+
+    // AJOUT DES FORMES
+
+    private void AjouterForme(ShapeType type)
+    {
+        if (lstDiapositives.SelectedItem is not Slide slide)
+            return;
+
+        var forme = new ShapeElement
+        {
+            X = 300,
+            Y = 180,
+            Width = 180,
+            Height = 120,
+            ShapeType = type,
+            Style = new ElementStyle
+            {
+                FillColor = "#ADD8E6",
+                StrokeColor = "#000000",
+                StrokeThickness = 2
+            }
+        };
+
+        slide.Elements.Add(forme);
+
+        slideCanvas.DisplaySlide(slide);
+
+        lstDiapositives.Items.Refresh();
+    }
+
+    private void BtnRectangle_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AjouterForme(ShapeType.Rectangle);
+    }
+
+    private void BtnEllipse_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AjouterForme(ShapeType.Ellipse);
+    }
+
+    private void BtnLigne_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AjouterForme(ShapeType.Line);
+    }
+
+    private void BtnFleche_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AjouterForme(ShapeType.Arrow);
+    }
+
+    // SUPPRESSION D'UN ELEMENT
+
+    private void BtnSupprimerElement_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        SupprimerElementSelectionne();
+    }
+
+    private void SupprimerElementSelectionne()
+    {
+        if (_elementActuel == null)
+        {
+            MessageBox.Show(
+                "Sélectionnez d'abord un élément à supprimer.",
+                "Suppression",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            return;
+        }
+
+        if (lstDiapositives.SelectedItem is not Slide slide)
+            return;
+
+        slide.Elements.Remove(_elementActuel);
+
+        _elementActuel = null;
+
+        slideCanvas.DisplaySlide(slide);
+
+        lstDiapositives.Items.Refresh();
+    }
+
+    private void MainWindow_PreviewKeyDown(
+        object sender,
+        KeyEventArgs e)
+    {
+        // Ne pas supprimer pendant la saisie d'un texte.
+        if (Keyboard.FocusedElement is TextBox)
+            return;
+
+        if (e.Key == Key.Delete)
+        {
+            SupprimerElementSelectionne();
+            e.Handled = true;
         }
     }
 
