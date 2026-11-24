@@ -126,9 +126,10 @@
 
                 <Separator Margin="8,5"/>
 
-                <StackPanel Width="170">
+                <!-- GROUPE TEXTE -->
+                <StackPanel Width="190">
                     <WrapPanel HorizontalAlignment="Center">
-                        <Button Content="Texte"
+                        <Button Content="Zone de texte"
                                 Click="BtnTexte_Click"/>
                         <Button Content="Police"/>
                         <Button Content="Couleur"/>
@@ -140,6 +141,7 @@
 
                 <Separator Margin="8,5"/>
 
+                <!-- GROUPE FORMES -->
                 <StackPanel Width="180">
                     <WrapPanel HorizontalAlignment="Center">
                         <Button Content="Rectangle"/>
@@ -153,6 +155,7 @@
 
                 <Separator Margin="8,5"/>
 
+                <!-- GROUPE MODIFICATION -->
                 <StackPanel Width="150">
                     <WrapPanel HorizontalAlignment="Center">
                         <Button Content="Image"/>
@@ -165,6 +168,7 @@
 
                 <Separator Margin="8,5"/>
 
+                <!-- GROUPE DIAPOSITIVES -->
                 <StackPanel Width="145">
                     <WrapPanel HorizontalAlignment="Center">
                         <Button Content="Ajouter"
