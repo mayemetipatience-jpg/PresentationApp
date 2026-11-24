@@ -176,7 +176,8 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="42"/>
             <RowDefinition Height="38"/>
-            <RowDefinition Height="112"/>
+            <!-- Hauteur augmentée pour afficher tous les boutons du ruban -->
+            <RowDefinition Height="190"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="28"/>
         </Grid.RowDefinitions>
@@ -353,21 +354,18 @@
 
                         <Separator Margin="4,2"/>
 
-                        <!-- ALIGNEMENT GAUCHE -->
                         <Button Content="≡"
                                 FontSize="18"
                                 Width="35"
                                 Click="BtnAlignerGauche_Click"
                                 ToolTip="Aligner à gauche"/>
 
-                        <!-- ALIGNEMENT CENTRE -->
                         <Button Content="☰"
                                 FontSize="18"
                                 Width="35"
                                 Click="BtnCentrerTexte_Click"
                                 ToolTip="Centrer le texte"/>
 
-                        <!-- ALIGNEMENT DROITE -->
                         <Button Content="≡"
                                 FontSize="18"
                                 Width="35"
@@ -426,8 +424,9 @@
 
                 <Separator Margin="8,5"/>
 
-                <!-- MODIFICATION -->
-                <StackPanel Width="150">
+                <!-- MODIFICATION ET CALQUES -->
+                <StackPanel Width="215">
+
                     <WrapPanel HorizontalAlignment="Center">
 
                         <Button Content="Image"
@@ -444,8 +443,44 @@
 
                     </WrapPanel>
 
+                    <Separator Margin="5,3"/>
+
+                    <TextBlock Text="Ordre des calques"
+                               Style="{StaticResource GroupTitle}"/>
+
+                    <WrapPanel HorizontalAlignment="Center">
+
+                        <Button Content="Premier plan"
+                                FontSize="11"
+                                Padding="5,5"
+                                Click="BtnPremierPlan_Click"
+                                ToolTip="Mettre au premier plan"/>
+
+                        <!-- Attention : cet événement concerne le calque,
+                             et non la couleur d'arrière-plan de la diapositive. -->
+                        <Button Content="Arrière-plan"
+                                FontSize="11"
+                                Padding="5,5"
+                                Click="BtnArrierePlanCalque_Click"
+                                ToolTip="Mettre à l'arrière-plan"/>
+
+                        <Button Content="Avancer"
+                                FontSize="11"
+                                Padding="5,5"
+                                Click="BtnAvancerCalque_Click"
+                                ToolTip="Avancer d'un calque"/>
+
+                        <Button Content="Reculer"
+                                FontSize="11"
+                                Padding="5,5"
+                                Click="BtnReculerCalque_Click"
+                                ToolTip="Reculer d'un calque"/>
+
+                    </WrapPanel>
+
                     <TextBlock Text="Modification"
                                Style="{StaticResource GroupTitle}"/>
+
                 </StackPanel>
 
                 <Separator Margin="8,5"/>

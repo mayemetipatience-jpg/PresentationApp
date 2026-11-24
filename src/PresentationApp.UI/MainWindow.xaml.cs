@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -352,7 +351,7 @@ public partial class MainWindow : Window
         lstDiapositives.Items.Refresh();
     }
 
-    // ARRIERE-PLAN
+    // ARRIERE-PLAN DE LA DIAPOSITIVE
 
     private void BtnArrierePlan_Click(
         object sender,
@@ -368,6 +367,73 @@ public partial class MainWindow : Window
 
         slideCanvas.DisplaySlide(slide);
         lstDiapositives.Items.Refresh();
+    }
+
+    // GESTION DES CALQUES
+
+    private void BtnPremierPlan_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (slideCanvas.ElementSelectionne == null)
+        {
+            AfficherMessageSelectionCalque();
+            return;
+        }
+
+        slideCanvas.MettreAuPremierPlan();
+        lstDiapositives.Items.Refresh();
+    }
+
+    private void BtnArrierePlanCalque_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (slideCanvas.ElementSelectionne == null)
+        {
+            AfficherMessageSelectionCalque();
+            return;
+        }
+
+        slideCanvas.MettreEnArrierePlan();
+        lstDiapositives.Items.Refresh();
+    }
+
+    private void BtnAvancerCalque_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (slideCanvas.ElementSelectionne == null)
+        {
+            AfficherMessageSelectionCalque();
+            return;
+        }
+
+        slideCanvas.AvancerDUnCalque();
+        lstDiapositives.Items.Refresh();
+    }
+
+    private void BtnReculerCalque_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (slideCanvas.ElementSelectionne == null)
+        {
+            AfficherMessageSelectionCalque();
+            return;
+        }
+
+        slideCanvas.ReculerDUnCalque();
+        lstDiapositives.Items.Refresh();
+    }
+
+    private void AfficherMessageSelectionCalque()
+    {
+        MessageBox.Show(
+            "Sélectionnez d'abord un élément sur la diapositive.",
+            "Gestion des calques",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
 
     // ROTATION
@@ -407,7 +473,6 @@ public partial class MainWindow : Window
         if (lstDiapositives.SelectedItem is not Slide slide)
             return;
 
-        // Récupérer l'élément réellement sélectionné sur le canvas.
         SlideElement? elementASupprimer =
             slideCanvas.ElementSelectionne ?? _elementActuel;
 
@@ -421,7 +486,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Vérifier que l'élément appartient bien à la diapositive.
         bool elementSupprime =
             slide.Elements.Remove(elementASupprimer);
 
@@ -435,10 +499,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Réinitialiser la sélection.
         _elementActuel = null;
 
-        // Reconstruire le canvas sans l'élément supprimé.
         slideCanvas.DisplaySlide(slide);
 
         lstDiapositives.Items.Refresh();
@@ -655,8 +717,6 @@ public partial class MainWindow : Window
         bool toucheCtrl =
             Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
 
-        // Ctrl + Suppr : supprimer toute la zone sélectionnée,
-        // même lorsque le curseur est dans un TextBox.
         if (e.Key == Key.Delete && toucheCtrl)
         {
             SupprimerElementSelectionne();
@@ -664,8 +724,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Lorsqu'on écrit dans une zone de texte,
-        // Suppr doit continuer à supprimer les caractères.
         if (Keyboard.FocusedElement is TextBox)
         {
             return;

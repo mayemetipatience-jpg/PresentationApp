@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Collections.Generic;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Controls.Primitives;
@@ -16,6 +17,7 @@ namespace PresentationApp.UI.Canvas
     public class SlideCanvas : System.Windows.Controls.Canvas
     {
         private Slide? _slidePourInsertion;
+        private Slide? _diapositiveAffichee;
         private bool _modeInsertionTexte;
 
         private SlideElement? _elementSelectionne;
@@ -56,6 +58,116 @@ namespace PresentationApp.UI.Canvas
         {
             DiapositiveModifiee?.Invoke();
         }
+
+        // =====================================================
+        // GESTION DES CALQUES
+        // =====================================================
+
+        public void MettreAuPremierPlan()
+        {
+            if (_diapositiveAffichee == null ||
+                _elementSelectionne == null)
+                return;
+
+            int maximum = _diapositiveAffichee.Elements
+                .Max(e => e.ZIndex);
+
+            _elementSelectionne.ZIndex = maximum + 1;
+
+            ActualiserOrdreCalques();
+        }
+
+        public void MettreEnArrierePlan()
+        {
+            if (_diapositiveAffichee == null ||
+                _elementSelectionne == null)
+                return;
+
+            int minimum = _diapositiveAffichee.Elements
+                .Min(e => e.ZIndex);
+
+            _elementSelectionne.ZIndex = minimum - 1;
+
+            ActualiserOrdreCalques();
+        }
+
+        public void AvancerDUnCalque()
+        {
+            DeplacerCalque(1);
+        }
+
+        public void ReculerDUnCalque()
+        {
+            DeplacerCalque(-1);
+        }
+
+        private void DeplacerCalque(int direction)
+        {
+            if (_diapositiveAffichee == null ||
+                _elementSelectionne == null)
+                return;
+
+            List<SlideElement> elements =
+                _diapositiveAffichee.Elements
+                    .OrderBy(e => e.ZIndex)
+                    .ToList();
+
+            int index = elements.IndexOf(_elementSelectionne);
+
+            if (index < 0)
+                return;
+
+            int nouvelIndex = index + direction;
+
+            if (nouvelIndex < 0 ||
+                nouvelIndex >= elements.Count)
+                return;
+
+            SlideElement elementTemporaire = elements[index];
+
+            elements[index] = elements[nouvelIndex];
+            elements[nouvelIndex] = elementTemporaire;
+
+            for (int i = 0; i < elements.Count; i++)
+                elements[i].ZIndex = i;
+
+            ActualiserOrdreCalques();
+        }
+
+        private void ActualiserOrdreCalques()
+        {
+            if (_diapositiveAffichee == null)
+                return;
+
+            List<SlideElement> elements =
+                _diapositiveAffichee.Elements
+                    .OrderBy(e => e.ZIndex)
+                    .ToList();
+
+            for (int i = 0; i < elements.Count; i++)
+            {
+                SlideElement element = elements[i];
+
+                element.ZIndex = i;
+
+                foreach (UIElement enfant in Children)
+                {
+                    if (enfant is FrameworkElement visual &&
+                        ReferenceEquals(visual.Tag, element))
+                    {
+                        SetZIndex(visual, element.ZIndex);
+                        break;
+                    }
+                }
+            }
+
+            ActualiserCadreSelection();
+            NotifierModification();
+        }
+
+        // =====================================================
+        // CADRE DE SELECTION
+        // =====================================================
 
         public void CreerCadreSelection()
         {
@@ -99,6 +211,10 @@ namespace PresentationApp.UI.Canvas
             SetZIndex(poignee, int.MaxValue);
         }
 
+        // =====================================================
+        // INSERTION DE TEXTE
+        // =====================================================
+
         public void ActiverInsertionTexte(Slide slide)
         {
             _slidePourInsertion = slide;
@@ -136,6 +252,8 @@ namespace PresentationApp.UI.Canvas
                 SetTop(zoneTexte, nouvelElement.Y);
                 SetZIndex(zoneTexte, nouvelElement.ZIndex);
 
+                zoneTexte.Tag = nouvelElement;
+
                 AjouterEvenementsSelection(zoneTexte, nouvelElement);
 
                 Children.Add(zoneTexte);
@@ -159,6 +277,10 @@ namespace PresentationApp.UI.Canvas
                 DeselectionnerElement();
         }
 
+        // =====================================================
+        // AFFICHAGE D'UNE DIAPOSITIVE
+        // =====================================================
+
         public void DisplaySlide(Slide? slide)
         {
             Children.Clear();
@@ -167,6 +289,8 @@ namespace PresentationApp.UI.Canvas
             _visuelSelectionne = null;
             _cadreSelection = null;
             _poignees.Clear();
+
+            _diapositiveAffichee = slide;
 
             ElementSelectionChangee?.Invoke(null);
 
@@ -191,7 +315,8 @@ namespace PresentationApp.UI.Canvas
                 Background = Brushes.White;
             }
 
-            foreach (SlideElement element in slide.Elements)
+            foreach (SlideElement element in
+                     slide.Elements.OrderBy(e => e.ZIndex))
             {
                 FrameworkElement? visual = CreateVisual(element);
 
@@ -201,6 +326,8 @@ namespace PresentationApp.UI.Canvas
                 SetLeft(visual, element.X);
                 SetTop(visual, element.Y);
                 SetZIndex(visual, element.ZIndex);
+
+                visual.Tag = element;
 
                 visual.RenderTransformOrigin = new Point(0.5, 0.5);
                 visual.RenderTransform =
@@ -213,6 +340,10 @@ namespace PresentationApp.UI.Canvas
 
             CreerCadreSelection();
         }
+
+        // =====================================================
+        // SELECTION ET DEPLACEMENT
+        // =====================================================
 
         private void AjouterEvenementsSelection(
             FrameworkElement visual,
@@ -299,6 +430,10 @@ namespace PresentationApp.UI.Canvas
 
             ElementSelectionChangee?.Invoke(null);
         }
+
+        // =====================================================
+        // ACTUALISATION D'UN ELEMENT
+        // =====================================================
 
         public void ActualiserElementSelectionne()
         {
@@ -400,6 +535,10 @@ namespace PresentationApp.UI.Canvas
                 : ConvertirCouleurTexte(style.TextColor);
         }
 
+        // =====================================================
+        // CADRE ET POIGNEES
+        // =====================================================
+
         private void ActualiserCadreSelection()
         {
             if (_elementSelectionne == null ||
@@ -444,6 +583,10 @@ namespace PresentationApp.UI.Canvas
             SetLeft(_poignees[index], x);
             SetTop(_poignees[index], y);
         }
+
+        // =====================================================
+        // REDIMENSIONNEMENT
+        // =====================================================
 
         private void Poignee_DragDelta(
             object sender,
@@ -538,6 +681,10 @@ namespace PresentationApp.UI.Canvas
             NotifierModification();
         }
 
+        // =====================================================
+        // CREATION DES ELEMENTS VISUELS
+        // =====================================================
+
         private FrameworkElement? CreateVisual(SlideElement element)
         {
             if (element is TextElement text)
@@ -578,6 +725,10 @@ namespace PresentationApp.UI.Canvas
         {
             return ConvertirCouleur(couleur, Brushes.Black);
         }
+
+        // =====================================================
+        // EDITEUR DE TEXTE
+        // =====================================================
 
         private TextBox CreerEditeurTexte(TextElement element)
         {
@@ -698,6 +849,10 @@ namespace PresentationApp.UI.Canvas
 
             return zoneTexte;
         }
+
+        // =====================================================
+        // CREATION DES FORMES
+        // =====================================================
 
         private FrameworkElement CreateShape(ShapeElement element)
         {
@@ -957,6 +1112,10 @@ namespace PresentationApp.UI.Canvas
 
             return points;
         }
+
+        // =====================================================
+        // INSERTION D'IMAGE
+        // =====================================================
 
         private FrameworkElement CreateImage(ImageElement element)
         {
