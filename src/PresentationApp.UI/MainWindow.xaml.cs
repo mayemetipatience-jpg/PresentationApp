@@ -267,7 +267,8 @@ public partial class MainWindow : Window
             FontSize = element.Style.FontSize,
             IsBold = element.Style.IsBold,
             IsItalic = element.Style.IsItalic,
-            IsUnderline = element.Style.IsUnderline
+            IsUnderline = element.Style.IsUnderline,
+            TextAlignment = element.Style.TextAlignment
         };
 
         SlideElement copie;
@@ -460,9 +461,7 @@ public partial class MainWindow : Window
             Math.Min(index, _presentation.Slides.Count - 1);
     }
 
-    // -------------------------------------------------
-    // NOUVEAU : FORMATAGE DU TEXTE
-    // -------------------------------------------------
+    // FORMATAGE DU TEXTE
 
     private bool VerifierSelectionTexte()
     {
@@ -607,9 +606,42 @@ public partial class MainWindow : Window
         ActualiserFormatageTexte();
     }
 
-    // -------------------------------------------------
+    // ALIGNEMENT DU TEXTE
+
+    private void AppliquerAlignementTexte(string alignement)
+    {
+        if (!VerifierSelectionTexte())
+            return;
+
+        TextElement texte = (TextElement)_elementActuel!;
+
+        texte.Style.TextAlignment = alignement;
+
+        ActualiserFormatageTexte();
+    }
+
+    private void BtnAlignerGauche_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AppliquerAlignementTexte("Left");
+    }
+
+    private void BtnCentrerTexte_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AppliquerAlignementTexte("Center");
+    }
+
+    private void BtnAlignerDroite_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        AppliquerAlignementTexte("Right");
+    }
+
     // RACCOURCIS CLAVIER
-    // -------------------------------------------------
 
     private void MainWindow_PreviewKeyDown(
         object sender,
@@ -691,7 +723,6 @@ public partial class MainWindow : Window
                 FormaterValeur(element.Rotation) + "°";
         }
 
-        // Actualisation des commandes de formatage.
         if (element is TextElement texte)
         {
             SelectionnerValeursFormatage(texte);
@@ -700,8 +731,8 @@ public partial class MainWindow : Window
         _actualisationEnCours = false;
     }
 
-    // Met à jour les listes de police et de taille
-    // selon le texte sélectionné.
+    // MISE A JOUR DES COMMANDES DE FORMATAGE
+
     private void SelectionnerValeursFormatage(TextElement texte)
     {
         foreach (ComboBoxItem item in cmbPolice.Items)
@@ -738,6 +769,8 @@ public partial class MainWindow : Window
             }
         }
     }
+
+    // MODIFICATION DES PROPRIETES
 
     private void Propriete_TextChanged(
         object sender,
@@ -780,6 +813,8 @@ public partial class MainWindow : Window
 
         slideCanvas.ActualiserElementSelectionne();
     }
+
+    // ROTATION
 
     private void SliderRotation_ValueChanged(
         object sender,
