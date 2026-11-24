@@ -204,9 +204,10 @@
                                DockPanel.Dock="Top"/>
 
                     <Button Content="+ Nouvelle diapositive"
-                            DockPanel.Dock="Bottom"
-                            HorizontalAlignment="Stretch"
-                            Margin="2,8,2,2"/>
+        DockPanel.Dock="Bottom"
+        HorizontalAlignment="Stretch"
+        Margin="2,8,2,2"
+        Click="BtnNouvelleDiapositive_Click"/>
 
                     <Grid>
                         <ListBox x:Name="lstDiapositives"

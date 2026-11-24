@@ -1,23 +1,50 @@
-﻿using System.Text;
+﻿
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using PresentationApp.Core.Models;
 
 namespace PresentationApp.UI;
-
-/// <summary>
-/// Interaction logic for MainWindow.xaml
-/// </summary>
 public partial class MainWindow : Window
 {
+    // Présentation principale
+    private readonly Presentation _presentation = new();
+
     public MainWindow()
     {
         InitializeComponent();
+
+        InitialiserPresentation();
+    }
+
+    private void InitialiserPresentation()
+    {
+        // Créer la première diapositive
+        var premiereDiapositive = new Slide
+        {
+            Order = 1
+        };
+
+        _presentation.Slides.Add(premiereDiapositive);
+
+        // Connecter les diapositives à la liste de gauche
+        lstDiapositives.ItemsSource = _presentation.Slides;
+        lstDiapositives.DisplayMemberPath = nameof(Slide.Order);
+
+        // Écouter les changements de sélection
+        lstDiapositives.SelectionChanged +=
+            LstDiapositives_SelectionChanged;
+
+        // Sélectionner la première diapositive
+        lstDiapositives.SelectedIndex = 0;
+    }
+
+    private void LstDiapositives_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (lstDiapositives.SelectedItem is Slide slide)
+        {
+            slideCanvas.DisplaySlide(slide);
+        }
     }
 }
