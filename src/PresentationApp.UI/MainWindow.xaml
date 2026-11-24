@@ -275,21 +275,47 @@
                 <Separator Margin="8,5"/>
 
                 <!-- FORMES -->
-                <StackPanel Width="180">
-                    <WrapPanel HorizontalAlignment="Center">
-                        <Button Content="Rectangle"
-                                Click="BtnRectangle_Click"/>
-                        <Button Content="Ellipse"
-                                Click="BtnEllipse_Click"/>
-                        <Button Content="Ligne"
-                                Click="BtnLigne_Click"/>
-                        <Button Content="Flèche"
-                                Click="BtnFleche_Click"/>
-                    </WrapPanel>
-                    <TextBlock Text="Formes"
-                               Style="{StaticResource GroupTitle}"/>
-                </StackPanel>
+                <!-- FORMES -->
+                <!-- FORMES -->
+                <StackPanel Width="220">
 
+                    <ComboBox x:Name="cmbFormes"
+              Width="200"
+              Height="38"
+              Margin="5"
+              Padding="5"
+              IsEditable="False"
+              SelectedIndex="-1"
+              SelectionChanged="CmbFormes_SelectionChanged"
+              ToolTip="Choisir une forme">
+
+                        <ComboBoxItem Content="Rectangle" Tag="Rectangle"/>
+                        <ComboBoxItem Content="Rectangle arrondi" Tag="RoundedRectangle"/>
+                        <ComboBoxItem Content="Ellipse" Tag="Ellipse"/>
+                        <ComboBoxItem Content="Losange" Tag="Diamond"/>
+                        <ComboBoxItem Content="Triangle" Tag="Triangle"/>
+                        <ComboBoxItem Content="Triangle inversé" Tag="InvertedTriangle"/>
+                        <ComboBoxItem Content="Pentagone" Tag="Pentagon"/>
+                        <ComboBoxItem Content="Hexagone" Tag="Hexagon"/>
+                        <ComboBoxItem Content="Carré" Tag="Square"/>
+                        <ComboBoxItem Content="Demi-cercle" Tag="SemiCircle"/>
+                        <ComboBoxItem Content="Croix" Tag="Cross"/>
+                        <ComboBoxItem Content="Plus" Tag="Plus"/>
+                        <ComboBoxItem Content="Étoile à 5 branches" Tag="Star5"/>
+                        <ComboBoxItem Content="Étoile à 6 branches" Tag="Star6"/>
+                        <ComboBoxItem Content="Flèche droite" Tag="Arrow"/>
+                        <ComboBoxItem Content="Flèche gauche" Tag="ArrowLeft"/>
+                        <ComboBoxItem Content="Flèche vers le haut" Tag="ArrowUp"/>
+                        <ComboBoxItem Content="Flèche vers le bas" Tag="ArrowDown"/>
+                        <ComboBoxItem Content="Flèche double" Tag="DoubleArrow"/>
+                        <ComboBoxItem Content="Ligne diagonale" Tag="Line"/>
+
+                    </ComboBox>
+
+                    <TextBlock Text="Formes (20)"
+               Style="{StaticResource GroupTitle}"/>
+
+                </StackPanel>
                 <Separator Margin="8,5"/>
 
                 <!-- MODIFICATION -->

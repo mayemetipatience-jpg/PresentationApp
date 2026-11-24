@@ -114,7 +114,28 @@ public partial class MainWindow : Window
         }
     }
 
-    // AJOUT DES FORMES
+    // INSERTION DES 20 FORMES
+
+    private void CmbFormes_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (cmbFormes.SelectedItem is not ComboBoxItem item)
+            return;
+
+        if (item.Tag == null)
+            return;
+
+        if (!Enum.TryParse(
+                item.Tag.ToString(),
+                out ShapeType type))
+            return;
+
+        AjouterForme(type);
+
+        // Permet de sélectionner à nouveau la même forme.
+        cmbFormes.SelectedIndex = -1;
+    }
 
     private void AjouterForme(ShapeType type)
     {
@@ -141,34 +162,6 @@ public partial class MainWindow : Window
         slideCanvas.DisplaySlide(slide);
 
         lstDiapositives.Items.Refresh();
-    }
-
-    private void BtnRectangle_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        AjouterForme(ShapeType.Rectangle);
-    }
-
-    private void BtnEllipse_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        AjouterForme(ShapeType.Ellipse);
-    }
-
-    private void BtnLigne_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        AjouterForme(ShapeType.Line);
-    }
-
-    private void BtnFleche_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        AjouterForme(ShapeType.Arrow);
     }
 
     // SUPPRESSION D'UN ELEMENT
@@ -209,7 +202,6 @@ public partial class MainWindow : Window
         object sender,
         KeyEventArgs e)
     {
-        // Ne pas supprimer pendant la saisie d'un texte.
         if (Keyboard.FocusedElement is TextBox)
             return;
 
