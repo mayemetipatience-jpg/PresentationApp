@@ -1,0 +1,28 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build-and-test:
+    # WPF ne compile que sous Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Installer .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore
+        run: dotnet restore PresentationApp.sln
+
+      - name: Build
+        run: dotnet build PresentationApp.sln --no-restore -c Release
+
+      - name: Tests
+        run: dotnet test PresentationApp.sln --no-build -c Release --verbosity normal

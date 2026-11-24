@@ -1,0 +1,16 @@
+<Window x:Class="PresentationApp.UI.Views.OutlineAssistantWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Assistant de structure" Width="520" Height="420"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel Margin="12">
+        <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap" Margin="0,0,0,8"
+                   Text="Une ligne = une diapositive. Indentez (ou commencez par -) pour ajouter des puces."/>
+        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+            <Button Content="Générer" Width="90" IsDefault="True" Click="OnGenerate" Margin="0,0,8,0"/>
+            <Button Content="Annuler" Width="90" IsCancel="True"/>
+        </StackPanel>
+        <TextBox x:Name="OutlineBox" AcceptsReturn="True" AcceptsTab="True"
+                 VerticalScrollBarVisibility="Auto" FontFamily="Consolas"/>
+    </DockPanel>
+</Window>
