@@ -40,6 +40,8 @@ namespace PresentationApp.UI.Canvas
 
         public event Action<SlideElement?>? ElementSelectionChangee;
 
+        public event Action? DiapositiveModifiee;
+
         public SlideCanvas()
         {
             Width = 960;
@@ -50,6 +52,11 @@ namespace PresentationApp.UI.Canvas
             MouseLeftButtonDown += SlideCanvas_MouseLeftButtonDown;
 
             CreerCadreSelection();
+        }
+
+        public void NotifierModification()
+        {
+            DiapositiveModifiee?.Invoke();
         }
 
         public void CreerCadreSelection()
@@ -142,6 +149,8 @@ namespace PresentationApp.UI.Canvas
                 Cursor = Cursors.Arrow;
 
                 SelectionnerElement(nouvelElement, zoneTexte);
+
+                NotifierModification();
 
                 zoneTexte.Focus();
                 Keyboard.Focus(zoneTexte);
@@ -258,7 +267,9 @@ namespace PresentationApp.UI.Canvas
                 SetTop(visual, element.Y);
 
                 ActualiserCadreSelection();
+
                 ElementSelectionChangee?.Invoke(element);
+                NotifierModification();
             };
 
             visual.PreviewMouseLeftButtonUp += (sender, e) =>
@@ -312,6 +323,8 @@ namespace PresentationApp.UI.Canvas
                 new RotateTransform(_elementSelectionne.Rotation);
 
             ActualiserCadreSelection();
+
+            NotifierModification();
         }
 
         private void ActualiserCadreSelection()
@@ -447,7 +460,9 @@ namespace PresentationApp.UI.Canvas
             SetTop(_visuelSelectionne, nouveauY);
 
             ActualiserCadreSelection();
+
             ElementSelectionChangee?.Invoke(_elementSelectionne);
+            NotifierModification();
         }
 
         private FrameworkElement? CreateVisual(SlideElement element)
@@ -513,6 +528,8 @@ namespace PresentationApp.UI.Canvas
             {
                 element.Text = zoneTexte.Text;
                 zoneTexte.Foreground = Brushes.Black;
+
+                NotifierModification();
             };
 
             zoneTexte.GotKeyboardFocus += (s, e) =>

@@ -27,6 +27,9 @@ public partial class MainWindow : Window
         slideCanvas.ElementSelectionChangee +=
             SlideCanvas_ElementSelectionChangee;
 
+        slideCanvas.DiapositiveModifiee +=
+            SlideCanvas_DiapositiveModifiee;
+
         InitialiserPresentation();
     }
 
@@ -105,6 +108,11 @@ public partial class MainWindow : Window
         {
             slideCanvas.ActiverInsertionTexte(slide);
         }
+    }
+
+    private void SlideCanvas_DiapositiveModifiee()
+    {
+        lstDiapositives.Items.Refresh();
     }
 
     private void SlideCanvas_ElementSelectionChangee(
