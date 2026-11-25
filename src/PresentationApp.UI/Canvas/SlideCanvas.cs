@@ -367,6 +367,10 @@ namespace PresentationApp.UI.Canvas
                 if (_elementSelectionne != element)
                     return;
 
+                // Un élément verrouillé ne peut pas être déplacé.
+                if (element.IsLocked)
+                    return;
+
                 Point positionActuelle = e.GetPosition(this);
 
                 double differenceX =
@@ -438,7 +442,8 @@ namespace PresentationApp.UI.Canvas
         public void ActualiserElementSelectionne()
         {
             if (_elementSelectionne == null ||
-                _visuelSelectionne == null)
+                _visuelSelectionne == null ||
+                _elementSelectionne.IsLocked)
                 return;
 
             _visuelSelectionne.Width = _elementSelectionne.Width;
@@ -571,8 +576,28 @@ namespace PresentationApp.UI.Canvas
             PositionnerPoignee(3, x + largeur - TaillePoignee / 2,
                 y + hauteur - TaillePoignee / 2);
 
+            // Les poignées disparaissent si l'élément est verrouillé.
             foreach (Thumb poignee in _poignees)
-                poignee.Visibility = Visibility.Visible;
+            {
+                poignee.Visibility = _elementSelectionne.IsLocked
+                    ? Visibility.Collapsed
+                    : Visibility.Visible;
+            }
+        }
+
+        // Actualise l'état visuel après verrouillage ou déverrouillage.
+        public void ActualiserEtatVerrouillage()
+        {
+            if (_elementSelectionne == null ||
+                _visuelSelectionne == null)
+                return;
+
+            if (_visuelSelectionne is TextBox zoneTexte)
+                zoneTexte.IsReadOnly = _elementSelectionne.IsLocked;
+
+            _deplacementEnCours = false;
+
+            ActualiserCadreSelection();
         }
 
         private void PositionnerPoignee(int index, double x, double y)
@@ -594,6 +619,7 @@ namespace PresentationApp.UI.Canvas
         {
             if (_elementSelectionne == null ||
                 _visuelSelectionne == null ||
+                _elementSelectionne.IsLocked ||
                 sender is not Thumb poignee)
                 return;
 
@@ -798,6 +824,9 @@ namespace PresentationApp.UI.Canvas
                 TextWrapping = TextWrapping.Wrap,
                 AcceptsReturn = true,
 
+                // Le texte est non modifiable si l'élément est verrouillé.
+                IsReadOnly = element.IsLocked,
+
                 VerticalContentAlignment = VerticalAlignment.Center,
 
                 TextAlignment = ConvertirAlignement(style.TextAlignment),
@@ -809,14 +838,18 @@ namespace PresentationApp.UI.Canvas
 
             zoneTexte.TextChanged += (s, e) =>
             {
+                if (element.IsLocked)
+                    return;
+
                 element.Text = zoneTexte.Text;
                 NotifierModification();
             };
 
             zoneTexte.GotKeyboardFocus += (s, e) =>
             {
-                if (zoneTexte.Text == TexteTitre ||
-                    zoneTexte.Text == TexteSousTitre)
+                if (!element.IsLocked &&
+                    (zoneTexte.Text == TexteTitre ||
+                     zoneTexte.Text == TexteSousTitre))
                 {
                     zoneTexte.Text = string.Empty;
                     zoneTexte.Foreground =
@@ -828,7 +861,8 @@ namespace PresentationApp.UI.Canvas
 
             zoneTexte.LostKeyboardFocus += (s, e) =>
             {
-                if (string.IsNullOrWhiteSpace(zoneTexte.Text))
+                if (!element.IsLocked &&
+                    string.IsNullOrWhiteSpace(zoneTexte.Text))
                 {
                     if (estTitre)
                         zoneTexte.Text = TexteTitre;
@@ -1154,6 +1188,10 @@ namespace PresentationApp.UI.Canvas
             };
         }
 
+        // =====================================================
+        // SELECTION DEPUIS LA LISTE DES CALQUES
+        // =====================================================
+
         public void SelectionnerElementDepuisListe(SlideElement element)
         {
             if (element == null)
@@ -1169,7 +1207,5 @@ namespace PresentationApp.UI.Canvas
                 }
             }
         }
-
     }
-
 }

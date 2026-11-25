@@ -1,4 +1,5 @@
-﻿<Window x:Class="PresentationApp.UI.MainWindow"
+﻿
+<Window x:Class="PresentationApp.UI.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:canvas="clr-namespace:PresentationApp.UI.Canvas"
@@ -440,6 +441,13 @@
                         <Button Content="Supprimer élément"
                                 Click="BtnSupprimerElement_Click"/>
 
+                        <!-- NOUVEAU : VERROUILLAGE -->
+                        <Button Content="🔒 Verrouiller / Déverrouiller"
+                                Click="BtnVerrouiller_Click"
+                                ToolTip="Empêcher ou autoriser la modification de l'élément sélectionné"
+                                FontSize="11"
+                                Padding="5,5"/>
+
                     </WrapPanel>
 
                     <Separator Margin="5,3"/>
@@ -717,7 +725,7 @@
                                    HorizontalAlignment="Center"
                                    Margin="2,5"/>
 
-                        <!-- NOUVEAU : LISTE DES CALQUES -->
+                        <!-- LISTE DES CALQUES -->
                         <Separator Margin="0,15"/>
 
                         <TextBlock Text="Calques de la diapositive"

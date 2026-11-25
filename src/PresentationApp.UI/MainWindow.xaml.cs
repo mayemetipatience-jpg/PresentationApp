@@ -34,17 +34,12 @@ public partial class MainWindow : Window
 
     private int _indexCouleurFond;
 
-    private const string TexteTitre =
-        "Cliquez pour ajouter un titre";
+    private const string TexteTitre = "Cliquez pour ajouter un titre";
+    private const string TexteSousTitre = "Cliquez pour ajouter un sous-titre";
 
-    private const string TexteSousTitre =
-        "Cliquez pour ajouter un sous-titre";
-
-    // Élément affiché dans la liste des calques
     private class CalqueItem
     {
         public SlideElement Element { get; set; }
-
         public string Nom { get; set; }
 
         public CalqueItem(SlideElement element, string nom)
@@ -170,9 +165,7 @@ public partial class MainWindow : Window
         if (item.Tag == null)
             return;
 
-        if (!Enum.TryParse(
-                item.Tag.ToString(),
-                out ShapeType type))
+        if (!Enum.TryParse(item.Tag.ToString(), out ShapeType type))
             return;
 
         AjouterForme(type);
@@ -205,6 +198,51 @@ public partial class MainWindow : Window
         slideCanvas.DisplaySlide(slide);
         lstDiapositives.Items.Refresh();
         ActualiserListeCalques();
+    }
+
+    // VERROUILLAGE / DEVERROUILLAGE
+
+    private void BtnVerrouiller_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        SlideElement? element = slideCanvas.ElementSelectionne
+            ?? _elementActuel;
+
+        if (element == null)
+        {
+            MessageBox.Show(
+                "Sélectionnez d'abord un élément à verrouiller.",
+                "Verrouillage",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+            return;
+        }
+
+        element.IsLocked = !element.IsLocked;
+
+        // Actualise immédiatement l'affichage du canvas.
+        slideCanvas.ActualiserEtatVerrouillage();
+
+        // Actualise les propriétés et les boutons.
+        SlideCanvas_ElementSelectionChangee(element);
+
+        // Actualise le nom du calque.
+        ActualiserListeCalques();
+    }
+
+    private bool ElementEstVerrouille()
+    {
+        return _elementActuel?.IsLocked == true;
+    }
+
+    private void AfficherMessageElementVerrouille()
+    {
+        MessageBox.Show(
+            "Cet élément est verrouillé. Déverrouillez-le pour le modifier.",
+            "Élément verrouillé",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
 
     // COPIER
@@ -245,6 +283,12 @@ public partial class MainWindow : Window
                 "Couper",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+            return;
+        }
+
+        if (element.IsLocked)
+        {
+            AfficherMessageElementVerrouille();
             return;
         }
 
@@ -338,6 +382,9 @@ public partial class MainWindow : Window
         copie.Rotation = element.Rotation;
         copie.ZIndex = element.ZIndex;
         copie.Style = style;
+
+        // La copie est indépendante et déverrouillée.
+        copie.IsLocked = false;
 
         return copie;
     }
@@ -516,6 +563,9 @@ public partial class MainWindow : Window
                 nom = "Élément";
             }
 
+            if (element.IsLocked)
+                nom = "🔒 " + nom;
+
             calques.Add(new CalqueItem(element, nom));
         }
 
@@ -526,8 +576,8 @@ public partial class MainWindow : Window
             foreach (CalqueItem calque in calques)
             {
                 if (ReferenceEquals(
-                        calque.Element,
-                        elementSelectionne))
+                    calque.Element,
+                    elementSelectionne))
                 {
                     lstCalques.SelectedItem = calque;
                     break;
@@ -538,7 +588,7 @@ public partial class MainWindow : Window
         _actualisationCalquesEnCours = false;
     }
 
-    // SÉLECTION DEPUIS LA LISTE DES CALQUES
+    // SELECTION DEPUIS LA LISTE DES CALQUES
 
     private void LstCalques_SelectionChanged(
         object sender,
@@ -567,6 +617,12 @@ public partial class MainWindow : Window
                 "Rotation",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+            return;
+        }
+
+        if (ElementEstVerrouille())
+        {
+            AfficherMessageElementVerrouille();
             return;
         }
 
@@ -601,6 +657,12 @@ public partial class MainWindow : Window
                 "Suppression",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+            return;
+        }
+
+        if (elementASupprimer.IsLocked)
+        {
+            AfficherMessageElementVerrouille();
             return;
         }
 
@@ -670,8 +732,14 @@ public partial class MainWindow : Window
 
     private bool VerifierSelectionTexte()
     {
-        if (_elementActuel is TextElement)
+        if (_elementActuel is TextElement && !ElementEstVerrouille())
             return true;
+
+        if (ElementEstVerrouille())
+        {
+            AfficherMessageElementVerrouille();
+            return false;
+        }
 
         MessageBox.Show(
             "Sélectionnez d'abord une zone de texte.",
@@ -684,7 +752,8 @@ public partial class MainWindow : Window
 
     private void ActualiserFormatageTexte()
     {
-        if (_elementActuel is not TextElement)
+        if (_elementActuel is not TextElement ||
+            ElementEstVerrouille())
             return;
 
         slideCanvas.ActualiserElementSelectionne();
@@ -696,7 +765,8 @@ public partial class MainWindow : Window
         SelectionChangedEventArgs e)
     {
         if (_actualisationEnCours ||
-            _elementActuel is not TextElement texte)
+            _elementActuel is not TextElement texte ||
+            ElementEstVerrouille())
             return;
 
         if (cmbPolice.SelectedItem is not ComboBoxItem item)
@@ -716,16 +786,17 @@ public partial class MainWindow : Window
         SelectionChangedEventArgs e)
     {
         if (_actualisationEnCours ||
-            _elementActuel is not TextElement texte)
+            _elementActuel is not TextElement texte ||
+            ElementEstVerrouille())
             return;
 
         if (cmbTaille.SelectedItem is not ComboBoxItem item)
             return;
 
         if (!double.TryParse(
-                item.Content?.ToString(),
-                CultureInfo.InvariantCulture,
-                out double taille))
+            item.Content?.ToString(),
+            CultureInfo.InvariantCulture,
+            out double taille))
             return;
 
         if (taille <= 0)
@@ -740,7 +811,8 @@ public partial class MainWindow : Window
         SelectionChangedEventArgs e)
     {
         if (_actualisationEnCours ||
-            _elementActuel is not TextElement texte)
+            _elementActuel is not TextElement texte ||
+            ElementEstVerrouille())
             return;
 
         if (cmbCouleurTexte.SelectedItem is not ComboBoxItem item)
@@ -844,9 +916,7 @@ public partial class MainWindow : Window
         }
 
         if (Keyboard.FocusedElement is TextBox)
-        {
             return;
-        }
 
         if (toucheCtrl)
         {
@@ -892,12 +962,22 @@ public partial class MainWindow : Window
         _actualisationEnCours = true;
 
         bool selectionExiste = element != null;
+        bool elementVerrouille = element?.IsLocked == true;
 
-        txtPositionX.IsEnabled = selectionExiste;
-        txtPositionY.IsEnabled = selectionExiste;
-        txtLargeur.IsEnabled = selectionExiste;
-        txtHauteur.IsEnabled = selectionExiste;
-        sliderRotation.IsEnabled = selectionExiste;
+        // Les propriétés géométriques sont désactivées si verrouillé.
+        txtPositionX.IsEnabled = selectionExiste && !elementVerrouille;
+        txtPositionY.IsEnabled = selectionExiste && !elementVerrouille;
+        txtLargeur.IsEnabled = selectionExiste && !elementVerrouille;
+        txtHauteur.IsEnabled = selectionExiste && !elementVerrouille;
+        sliderRotation.IsEnabled = selectionExiste && !elementVerrouille;
+
+        // Les contrôles de formatage du texte.
+        bool texteModifiable =
+            element is TextElement && !elementVerrouille;
+
+        cmbPolice.IsEnabled = texteModifiable;
+        cmbTaille.IsEnabled = texteModifiable;
+        cmbCouleurTexte.IsEnabled = texteModifiable;
 
         if (element == null)
         {
@@ -944,9 +1024,9 @@ public partial class MainWindow : Window
         foreach (ComboBoxItem item in cmbTaille.Items)
         {
             if (double.TryParse(
-                    item.Content?.ToString(),
-                    CultureInfo.InvariantCulture,
-                    out double taille) &&
+                item.Content?.ToString(),
+                CultureInfo.InvariantCulture,
+                out double taille) &&
                 Math.Abs(taille - texte.Style.FontSize) < 0.01)
             {
                 cmbTaille.SelectedItem = item;
@@ -957,9 +1037,9 @@ public partial class MainWindow : Window
         foreach (ComboBoxItem item in cmbCouleurTexte.Items)
         {
             if (string.Equals(
-                    item.Tag?.ToString(),
-                    texte.Style.TextColor,
-                    StringComparison.OrdinalIgnoreCase))
+                item.Tag?.ToString(),
+                texte.Style.TextColor,
+                StringComparison.OrdinalIgnoreCase))
             {
                 cmbCouleurTexte.SelectedItem = item;
                 break;
@@ -973,17 +1053,19 @@ public partial class MainWindow : Window
         object sender,
         TextChangedEventArgs e)
     {
-        if (_actualisationEnCours || _elementActuel == null)
+        if (_actualisationEnCours ||
+            _elementActuel == null ||
+            ElementEstVerrouille())
             return;
 
         if (sender is not TextBox champ)
             return;
 
         if (!double.TryParse(
-                champ.Text,
-                NumberStyles.Float,
-                CultureInfo.CurrentCulture,
-                out double valeur))
+            champ.Text,
+            NumberStyles.Float,
+            CultureInfo.CurrentCulture,
+            out double valeur))
             return;
 
         if (double.IsNaN(valeur) || double.IsInfinity(valeur))
@@ -1017,7 +1099,9 @@ public partial class MainWindow : Window
         object sender,
         RoutedPropertyChangedEventArgs<double> e)
     {
-        if (_actualisationEnCours || _elementActuel == null)
+        if (_actualisationEnCours ||
+            _elementActuel == null ||
+            ElementEstVerrouille())
             return;
 
         _elementActuel.Rotation = e.NewValue;
