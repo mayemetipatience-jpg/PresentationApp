@@ -32,8 +32,6 @@ public partial class MainWindow : Window
         "#E4DFEC"
     };
 
-    // COULEURS DE REMPLISSAGE AVEC LEURS NOMS
-
     private sealed class CouleurOption
     {
         public string Nom { get; set; }
@@ -71,7 +69,7 @@ public partial class MainWindow : Window
     private const string TexteTitre = "Cliquez pour ajouter un titre";
     private const string TexteSousTitre = "Cliquez pour ajouter un sous-titre";
 
-    private class CalqueItem
+    private sealed class CalqueItem
     {
         public SlideElement Element { get; set; }
         public string Nom { get; set; }
@@ -92,9 +90,6 @@ public partial class MainWindow : Window
 
         slideCanvas.DiapositiveModifiee +=
             SlideCanvas_DiapositiveModifiee;
-
-        lstCalques.SelectionChanged +=
-            LstCalques_SelectionChanged;
 
         PreviewKeyDown += MainWindow_PreviewKeyDown;
 
@@ -685,9 +680,23 @@ public partial class MainWindow : Window
 
     private void ActualiserListeCalques()
     {
+        if (lstCalques == null)
+            return;
+
         if (lstDiapositives.SelectedItem is not Slide slide)
         {
-            lstCalques.ItemsSource = null;
+            _actualisationCalquesEnCours = true;
+
+            try
+            {
+                lstCalques.ItemsSource = null;
+                lstCalques.SelectedItem = null;
+            }
+            finally
+            {
+                _actualisationCalquesEnCours = false;
+            }
+
             return;
         }
 
@@ -711,6 +720,11 @@ public partial class MainWindow : Window
                 if (element is TextElement texte)
                 {
                     string contenu = texte.Text ?? "";
+
+                    contenu = contenu
+                        .Replace("\r", " ")
+                        .Replace("\n", " ")
+                        .Trim();
 
                     if (string.IsNullOrWhiteSpace(contenu))
                         contenu = "Texte vide";
@@ -741,19 +755,12 @@ public partial class MainWindow : Window
 
             lstCalques.ItemsSource = calques;
 
-            if (elementSelectionne != null)
-            {
-                foreach (CalqueItem calque in calques)
-                {
-                    if (ReferenceEquals(
+            lstCalques.SelectedItem = elementSelectionne == null
+                ? null
+                : calques.FirstOrDefault(
+                    calque => ReferenceEquals(
                         calque.Element,
-                        elementSelectionne))
-                    {
-                        lstCalques.SelectedItem = calque;
-                        break;
-                    }
-                }
-            }
+                        elementSelectionne));
         }
         finally
         {
