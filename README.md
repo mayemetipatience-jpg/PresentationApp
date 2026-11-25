@@ -42,9 +42,9 @@ Prérequis : Visual Studio avec la charge de travail « Développement .NET Desk
 
 - Étudiant 1 : MAYEMETI PATIENCE, cheffe de projet, modèle de données, Undo/Redo, MainViewModel
 - Étudiant 2 : SOH FOTSO, éditeur de canevas
-- Étudiant 3 : [nom], interface principale et panneaux
-- Étudiant 4 : [nom], sauvegarde, export, thèmes et modèles
-- Étudiant 5 : [nom], mode présentation, transitions, documentation
+- Étudiant 3 : DZALIL LOYD, interface principale et panneaux
+- Étudiant 4 : TETSANG MEGANE, sauvegarde, export, thèmes et modèles
+- Étudiant 5 : ABOUBAKAR ASSANE, mode présentation, transitions, documentation
 
 ## Travailler sur le projet
 
