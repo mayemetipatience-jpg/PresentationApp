@@ -32,6 +32,40 @@ public partial class MainWindow : Window
         "#E4DFEC"
     };
 
+    // COULEURS DE REMPLISSAGE AVEC LEURS NOMS
+
+    private sealed class CouleurOption
+    {
+        public string Nom { get; set; }
+        public string Code { get; set; }
+
+        public CouleurOption(string nom, string code)
+        {
+            Nom = nom;
+            Code = code;
+        }
+    }
+
+    private readonly CouleurOption[] _couleursRemplissage =
+    {
+        new("Blanc", "#FFFFFF"),
+        new("Noir", "#000000"),
+        new("Rouge", "#FF0000"),
+        new("Vert", "#00FF00"),
+        new("Bleu", "#0000FF"),
+        new("Jaune", "#FFFF00"),
+        new("Orange", "#FFA500"),
+        new("Violet", "#800080"),
+        new("Bleu clair", "#ADD8E6"),
+        new("Rose", "#FFC0CB"),
+        new("Marron", "#A52A2A"),
+        new("Gris", "#808080"),
+        new("Turquoise", "#008080"),
+        new("Or", "#FFD700"),
+        new("Vert clair", "#90EE90"),
+        new("Rose vif", "#FF69B4")
+    };
+
     private int _indexCouleurFond;
 
     private const string TexteTitre = "Cliquez pour ajouter un titre";
@@ -66,6 +100,8 @@ public partial class MainWindow : Window
 
         InitialiserPresentation();
     }
+
+    // INITIALISATION
 
     private void InitialiserPresentation()
     {
@@ -119,6 +155,8 @@ public partial class MainWindow : Window
         return diapositive;
     }
 
+    // SELECTION DES DIAPOSITIVES
+
     private void LstDiapositives_SelectionChanged(
         object sender,
         SelectionChangedEventArgs e)
@@ -126,7 +164,9 @@ public partial class MainWindow : Window
         if (lstDiapositives.SelectedItem is Slide slide)
         {
             _elementActuel = null;
+
             slideCanvas.DisplaySlide(slide);
+
             ActualiserListeCalques();
         }
     }
@@ -144,6 +184,8 @@ public partial class MainWindow : Window
         lstDiapositives.Items.Refresh();
         lstDiapositives.SelectedItem = nouvelleDiapositive;
     }
+
+    // INSERTION DE TEXTE
 
     private void BtnTexte_Click(
         object sender,
@@ -196,6 +238,7 @@ public partial class MainWindow : Window
         slide.Elements.Add(forme);
 
         slideCanvas.DisplaySlide(slide);
+
         lstDiapositives.Items.Refresh();
         ActualiserListeCalques();
     }
@@ -206,8 +249,8 @@ public partial class MainWindow : Window
         object sender,
         RoutedEventArgs e)
     {
-        SlideElement? element = slideCanvas.ElementSelectionne
-            ?? _elementActuel;
+        SlideElement? element =
+            slideCanvas.ElementSelectionne ?? _elementActuel;
 
         if (element == null)
         {
@@ -216,18 +259,16 @@ public partial class MainWindow : Window
                 "Verrouillage",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+
             return;
         }
 
         element.IsLocked = !element.IsLocked;
 
-        // Actualise immédiatement l'affichage du canvas.
         slideCanvas.ActualiserEtatVerrouillage();
 
-        // Actualise les propriétés et les boutons.
         SlideCanvas_ElementSelectionChangee(element);
 
-        // Actualise le nom du calque.
         ActualiserListeCalques();
     }
 
@@ -245,14 +286,132 @@ public partial class MainWindow : Window
             MessageBoxImage.Information);
     }
 
+    // CHOIX DE LA COULEUR DE REMPLISSAGE
+
+    private void BtnCouleurRemplissage_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        SlideElement? element =
+            slideCanvas.ElementSelectionne ?? _elementActuel;
+
+        if (element == null)
+        {
+            MessageBox.Show(
+                "Sélectionnez d'abord une forme.",
+                "Couleur de remplissage",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            return;
+        }
+
+        if (element.IsLocked)
+        {
+            AfficherMessageElementVerrouille();
+            return;
+        }
+
+        if (element is not ShapeElement)
+        {
+            MessageBox.Show(
+                "La couleur de remplissage s'applique aux formes.",
+                "Couleur de remplissage",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            return;
+        }
+
+        Window fenetre = new()
+        {
+            Title = "Choisir une couleur de remplissage",
+            Width = 320,
+            Height = 260,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            Owner = this,
+            ResizeMode = ResizeMode.NoResize
+        };
+
+        StackPanel panneau = new()
+        {
+            Margin = new Thickness(15)
+        };
+
+        panneau.Children.Add(new TextBlock
+        {
+            Text = "Sélectionnez une couleur :",
+            FontSize = 14,
+            Margin = new Thickness(0, 0, 0, 12)
+        });
+
+        ComboBox listeCouleurs = new()
+        {
+            Height = 34
+        };
+
+        foreach (CouleurOption couleur in _couleursRemplissage)
+        {
+            listeCouleurs.Items.Add(new ComboBoxItem
+            {
+                Content = couleur.Nom,
+                Tag = couleur.Code
+            });
+        }
+
+        int indexActuel = Array.FindIndex(
+            _couleursRemplissage,
+            couleur => string.Equals(
+                couleur.Code,
+                element.Style.FillColor,
+                StringComparison.OrdinalIgnoreCase));
+
+        listeCouleurs.SelectedIndex =
+            indexActuel >= 0 ? indexActuel : 0;
+
+        panneau.Children.Add(listeCouleurs);
+
+        Button boutonAppliquer = new()
+        {
+            Content = "Appliquer la couleur",
+            Height = 35,
+            Margin = new Thickness(0, 20, 0, 0),
+            IsDefault = true
+        };
+
+        boutonAppliquer.Click += (_, _) =>
+        {
+            if (listeCouleurs.SelectedItem is not ComboBoxItem item)
+                return;
+
+            if (item.Tag is not string couleur)
+                return;
+
+            element.Style.FillColor = couleur;
+
+            slideCanvas.ActualiserElementSelectionne();
+
+            lstDiapositives.Items.Refresh();
+
+            fenetre.DialogResult = true;
+            fenetre.Close();
+        };
+
+        panneau.Children.Add(boutonAppliquer);
+
+        fenetre.Content = panneau;
+
+        fenetre.ShowDialog();
+    }
+
     // COPIER
 
     private void BtnCopier_Click(
         object sender,
         RoutedEventArgs e)
     {
-        SlideElement? element = slideCanvas.ElementSelectionne
-            ?? _elementActuel;
+        SlideElement? element =
+            slideCanvas.ElementSelectionne ?? _elementActuel;
 
         if (element == null)
         {
@@ -261,6 +420,7 @@ public partial class MainWindow : Window
                 "Copier",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+
             return;
         }
 
@@ -273,8 +433,8 @@ public partial class MainWindow : Window
         object sender,
         RoutedEventArgs e)
     {
-        SlideElement? element = slideCanvas.ElementSelectionne
-            ?? _elementActuel;
+        SlideElement? element =
+            slideCanvas.ElementSelectionne ?? _elementActuel;
 
         if (element == null)
         {
@@ -283,6 +443,7 @@ public partial class MainWindow : Window
                 "Couper",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+
             return;
         }
 
@@ -310,6 +471,7 @@ public partial class MainWindow : Window
                 "Coller",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+
             return;
         }
 
@@ -324,6 +486,7 @@ public partial class MainWindow : Window
         slide.Elements.Add(nouvelElement);
 
         slideCanvas.DisplaySlide(slide);
+
         lstDiapositives.Items.Refresh();
         ActualiserListeCalques();
     }
@@ -383,7 +546,6 @@ public partial class MainWindow : Window
         copie.ZIndex = element.ZIndex;
         copie.Style = style;
 
-        // La copie est indépendante et déverrouillée.
         copie.IsLocked = false;
 
         return copie;
@@ -419,6 +581,7 @@ public partial class MainWindow : Window
         slide.Elements.Add(nouvelImage);
 
         slideCanvas.DisplaySlide(slide);
+
         lstDiapositives.Items.Refresh();
         ActualiserListeCalques();
     }
@@ -438,6 +601,7 @@ public partial class MainWindow : Window
         slide.BackgroundColor = _couleursFond[_indexCouleurFond];
 
         slideCanvas.DisplaySlide(slide);
+
         lstDiapositives.Items.Refresh();
         ActualiserListeCalques();
     }
@@ -455,6 +619,7 @@ public partial class MainWindow : Window
         }
 
         slideCanvas.MettreAuPremierPlan();
+
         lstDiapositives.Items.Refresh();
         ActualiserListeCalques();
     }
@@ -470,6 +635,7 @@ public partial class MainWindow : Window
         }
 
         slideCanvas.MettreEnArrierePlan();
+
         lstDiapositives.Items.Refresh();
         ActualiserListeCalques();
     }
@@ -485,6 +651,7 @@ public partial class MainWindow : Window
         }
 
         slideCanvas.AvancerDUnCalque();
+
         lstDiapositives.Items.Refresh();
         ActualiserListeCalques();
     }
@@ -500,6 +667,7 @@ public partial class MainWindow : Window
         }
 
         slideCanvas.ReculerDUnCalque();
+
         lstDiapositives.Items.Refresh();
         ActualiserListeCalques();
     }
@@ -525,67 +693,72 @@ public partial class MainWindow : Window
 
         _actualisationCalquesEnCours = true;
 
-        SlideElement? elementSelectionne =
-            slideCanvas.ElementSelectionne ?? _elementActuel;
-
-        var elements = slide.Elements
-            .OrderByDescending(element => element.ZIndex)
-            .ToList();
-
-        List<CalqueItem> calques = new();
-
-        foreach (SlideElement element in elements)
+        try
         {
-            string nom;
+            SlideElement? elementSelectionne =
+                slideCanvas.ElementSelectionne ?? _elementActuel;
 
-            if (element is TextElement texte)
+            var elements = slide.Elements
+                .OrderByDescending(element => element.ZIndex)
+                .ToList();
+
+            List<CalqueItem> calques = new();
+
+            foreach (SlideElement element in elements)
             {
-                string contenu = texte.Text ?? "";
+                string nom;
 
-                if (string.IsNullOrWhiteSpace(contenu))
-                    contenu = "Texte vide";
-
-                if (contenu.Length > 25)
-                    contenu = contenu.Substring(0, 25) + "...";
-
-                nom = "Texte : " + contenu;
-            }
-            else if (element is ShapeElement forme)
-            {
-                nom = "Forme : " + forme.ShapeType;
-            }
-            else if (element is ImageElement)
-            {
-                nom = "Image";
-            }
-            else
-            {
-                nom = "Élément";
-            }
-
-            if (element.IsLocked)
-                nom = "🔒 " + nom;
-
-            calques.Add(new CalqueItem(element, nom));
-        }
-
-        lstCalques.ItemsSource = calques;
-
-        if (elementSelectionne != null)
-        {
-            foreach (CalqueItem calque in calques)
-            {
-                if (ReferenceEquals(
-                    calque.Element,
-                    elementSelectionne))
+                if (element is TextElement texte)
                 {
-                    lstCalques.SelectedItem = calque;
-                    break;
+                    string contenu = texte.Text ?? "";
+
+                    if (string.IsNullOrWhiteSpace(contenu))
+                        contenu = "Texte vide";
+
+                    if (contenu.Length > 25)
+                        contenu = contenu.Substring(0, 25) + "...";
+
+                    nom = "Texte : " + contenu;
+                }
+                else if (element is ShapeElement forme)
+                {
+                    nom = "Forme : " + forme.ShapeType;
+                }
+                else if (element is ImageElement)
+                {
+                    nom = "Image";
+                }
+                else
+                {
+                    nom = "Élément";
+                }
+
+                if (element.IsLocked)
+                    nom = "🔒 " + nom;
+
+                calques.Add(new CalqueItem(element, nom));
+            }
+
+            lstCalques.ItemsSource = calques;
+
+            if (elementSelectionne != null)
+            {
+                foreach (CalqueItem calque in calques)
+                {
+                    if (ReferenceEquals(
+                        calque.Element,
+                        elementSelectionne))
+                    {
+                        lstCalques.SelectedItem = calque;
+                        break;
+                    }
                 }
             }
         }
-
-        _actualisationCalquesEnCours = false;
+        finally
+        {
+            _actualisationCalquesEnCours = false;
+        }
     }
 
     // SELECTION DEPUIS LA LISTE DES CALQUES
@@ -604,33 +777,38 @@ public partial class MainWindow : Window
             calque.Element);
     }
 
-    // ROTATION
+    // ROTATION PAR BOUTON
 
     private void BtnRotation_Click(
         object sender,
         RoutedEventArgs e)
     {
-        if (_elementActuel == null)
+        SlideElement? element =
+            slideCanvas.ElementSelectionne ?? _elementActuel;
+
+        if (element == null)
         {
             MessageBox.Show(
                 "Sélectionnez un élément à faire pivoter.",
                 "Rotation",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+
             return;
         }
 
-        if (ElementEstVerrouille())
+        if (element.IsLocked)
         {
             AfficherMessageElementVerrouille();
             return;
         }
 
-        _elementActuel.Rotation =
-            (_elementActuel.Rotation + 90) % 360;
+        element.Rotation =
+            (element.Rotation + 90) % 360;
 
         slideCanvas.ActualiserElementSelectionne();
-        SlideCanvas_ElementSelectionChangee(_elementActuel);
+
+        SlideCanvas_ElementSelectionChangee(element);
     }
 
     // SUPPRESSION D'UN ELEMENT
@@ -657,6 +835,7 @@ public partial class MainWindow : Window
                 "Suppression",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+
             return;
         }
 
@@ -676,6 +855,7 @@ public partial class MainWindow : Window
                 "Suppression",
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
+
             return;
         }
 
@@ -703,6 +883,7 @@ public partial class MainWindow : Window
                 "Suppression",
                 MessageBoxButton.OK,
                 MessageBoxImage.Information);
+
             return;
         }
 
@@ -757,6 +938,7 @@ public partial class MainWindow : Window
             return;
 
         slideCanvas.ActualiserElementSelectionne();
+
         lstDiapositives.Items.Refresh();
     }
 
@@ -778,6 +960,7 @@ public partial class MainWindow : Window
             return;
 
         texte.Style.FontFamily = police;
+
         ActualiserFormatageTexte();
     }
 
@@ -803,6 +986,7 @@ public partial class MainWindow : Window
             return;
 
         texte.Style.FontSize = taille;
+
         ActualiserFormatageTexte();
     }
 
@@ -822,6 +1006,7 @@ public partial class MainWindow : Window
             return;
 
         texte.Style.TextColor = item.Tag.ToString()!;
+
         ActualiserFormatageTexte();
     }
 
@@ -833,6 +1018,7 @@ public partial class MainWindow : Window
             return;
 
         TextElement texte = (TextElement)_elementActuel!;
+
         texte.Style.IsBold = !texte.Style.IsBold;
 
         ActualiserFormatageTexte();
@@ -846,6 +1032,7 @@ public partial class MainWindow : Window
             return;
 
         TextElement texte = (TextElement)_elementActuel!;
+
         texte.Style.IsItalic = !texte.Style.IsItalic;
 
         ActualiserFormatageTexte();
@@ -859,6 +1046,7 @@ public partial class MainWindow : Window
             return;
 
         TextElement texte = (TextElement)_elementActuel!;
+
         texte.Style.IsUnderline = !texte.Style.IsUnderline;
 
         ActualiserFormatageTexte();
@@ -911,6 +1099,7 @@ public partial class MainWindow : Window
         if (e.Key == Key.Delete && toucheCtrl)
         {
             SupprimerElementSelectionne();
+
             e.Handled = true;
             return;
         }
@@ -951,6 +1140,7 @@ public partial class MainWindow : Window
     private void SlideCanvas_DiapositiveModifiee()
     {
         lstDiapositives.Items.Refresh();
+
         ActualiserListeCalques();
     }
 
@@ -961,51 +1151,73 @@ public partial class MainWindow : Window
 
         _actualisationEnCours = true;
 
-        bool selectionExiste = element != null;
-        bool elementVerrouille = element?.IsLocked == true;
-
-        // Les propriétés géométriques sont désactivées si verrouillé.
-        txtPositionX.IsEnabled = selectionExiste && !elementVerrouille;
-        txtPositionY.IsEnabled = selectionExiste && !elementVerrouille;
-        txtLargeur.IsEnabled = selectionExiste && !elementVerrouille;
-        txtHauteur.IsEnabled = selectionExiste && !elementVerrouille;
-        sliderRotation.IsEnabled = selectionExiste && !elementVerrouille;
-
-        // Les contrôles de formatage du texte.
-        bool texteModifiable =
-            element is TextElement && !elementVerrouille;
-
-        cmbPolice.IsEnabled = texteModifiable;
-        cmbTaille.IsEnabled = texteModifiable;
-        cmbCouleurTexte.IsEnabled = texteModifiable;
-
-        if (element == null)
+        try
         {
-            txtPositionX.Text = "0";
-            txtPositionY.Text = "0";
-            txtLargeur.Text = "100";
-            txtHauteur.Text = "50";
-            sliderRotation.Value = 0;
-            txtValeurRotation.Text = "0°";
+            bool selectionExiste = element != null;
+            bool elementVerrouille = element?.IsLocked == true;
+
+            txtPositionX.IsEnabled =
+                selectionExiste && !elementVerrouille;
+
+            txtPositionY.IsEnabled =
+                selectionExiste && !elementVerrouille;
+
+            txtLargeur.IsEnabled =
+                selectionExiste && !elementVerrouille;
+
+            txtHauteur.IsEnabled =
+                selectionExiste && !elementVerrouille;
+
+            sliderRotation.IsEnabled =
+                selectionExiste && !elementVerrouille;
+
+            bool texteModifiable =
+                element is TextElement && !elementVerrouille;
+
+            cmbPolice.IsEnabled = texteModifiable;
+            cmbTaille.IsEnabled = texteModifiable;
+            cmbCouleurTexte.IsEnabled = texteModifiable;
+
+            if (element == null)
+            {
+                txtPositionX.Text = "0";
+                txtPositionY.Text = "0";
+                txtLargeur.Text = "100";
+                txtHauteur.Text = "50";
+
+                sliderRotation.Value = 0;
+                txtValeurRotation.Text = "0°";
+            }
+            else
+            {
+                txtPositionX.Text = FormaterValeur(element.X);
+                txtPositionY.Text = FormaterValeur(element.Y);
+                txtLargeur.Text = FormaterValeur(element.Width);
+                txtHauteur.Text = FormaterValeur(element.Height);
+
+                sliderRotation.Value =
+                    Math.Clamp(
+                        element.Rotation,
+                        sliderRotation.Minimum,
+                        sliderRotation.Maximum);
+
+                txtValeurRotation.Text =
+                    FormaterValeur(element.Rotation) + "°";
+            }
+
+            if (element is TextElement texte)
+                SelectionnerValeursFormatage(texte);
+            else
+            {
+                cmbPolice.SelectedIndex = -1;
+                cmbTaille.SelectedIndex = -1;
+                cmbCouleurTexte.SelectedIndex = -1;
+            }
         }
-        else
+        finally
         {
-            txtPositionX.Text = FormaterValeur(element.X);
-            txtPositionY.Text = FormaterValeur(element.Y);
-            txtLargeur.Text = FormaterValeur(element.Width);
-            txtHauteur.Text = FormaterValeur(element.Height);
-
-            sliderRotation.Value =
-                Math.Clamp(element.Rotation, 0, 360);
-
-            txtValeurRotation.Text =
-                FormaterValeur(element.Rotation) + "°";
+            _actualisationEnCours = false;
         }
-
-        if (element is TextElement texte)
-            SelectionnerValeursFormatage(texte);
-
-        _actualisationEnCours = false;
 
         ActualiserListeCalques();
     }
@@ -1093,7 +1305,7 @@ public partial class MainWindow : Window
         slideCanvas.ActualiserElementSelectionne();
     }
 
-    // ROTATION
+    // ROTATION PAR CURSEUR
 
     private void SliderRotation_ValueChanged(
         object sender,
@@ -1111,6 +1323,8 @@ public partial class MainWindow : Window
 
         slideCanvas.ActualiserElementSelectionne();
     }
+
+    // FORMATAGE DES VALEURS
 
     private string FormaterValeur(double valeur)
     {

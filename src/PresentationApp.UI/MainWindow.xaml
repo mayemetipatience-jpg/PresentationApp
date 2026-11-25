@@ -216,20 +216,23 @@
 
         <!-- ONGLETS -->
         <Border Grid.Row="1" Background="White">
-            <StackPanel Orientation="Horizontal"
-                        VerticalAlignment="Center">
-                <Button Style="{StaticResource TabButton}" Content="Fichier"/>
-                <Button Style="{StaticResource TabButton}"
-                        Content="Accueil"
-                        FontWeight="Bold"
-                        Foreground="#B7472A"/>
-                <Button Style="{StaticResource TabButton}" Content="Insertion"/>
-                <Button Style="{StaticResource TabButton}" Content="Création"/>
-                <Button Style="{StaticResource TabButton}" Content="Transitions"/>
-                <Button Style="{StaticResource TabButton}" Content="Animations"/>
-                <Button Style="{StaticResource TabButton}" Content="Diaporama"/>
-                <Button Style="{StaticResource TabButton}" Content="Affichage"/>
-            </StackPanel>
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled">
+                <StackPanel Orientation="Horizontal"
+                            VerticalAlignment="Center">
+                    <Button Style="{StaticResource TabButton}" Content="Fichier"/>
+                    <Button Style="{StaticResource TabButton}"
+                            Content="Accueil"
+                            FontWeight="Bold"
+                            Foreground="#B7472A"/>
+                    <Button Style="{StaticResource TabButton}" Content="Insertion"/>
+                    <Button Style="{StaticResource TabButton}" Content="Création"/>
+                    <Button Style="{StaticResource TabButton}" Content="Transitions"/>
+                    <Button Style="{StaticResource TabButton}" Content="Animations"/>
+                    <Button Style="{StaticResource TabButton}" Content="Diaporama"/>
+                    <Button Style="{StaticResource TabButton}" Content="Affichage"/>
+                </StackPanel>
+            </ScrollViewer>
         </Border>
 
         <!-- RUBAN -->
@@ -239,270 +242,284 @@
                 BorderThickness="0,1,0,1"
                 Padding="8,5">
 
-            <StackPanel Orientation="Horizontal">
+            <ScrollViewer HorizontalScrollBarVisibility="Auto"
+                          VerticalScrollBarVisibility="Disabled">
 
-                <!-- PRESSE-PAPIERS -->
-                <StackPanel Width="125">
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Center">
+                <StackPanel Orientation="Horizontal">
 
-                        <Button Content="Coller"
-                                FontSize="13"
-                                Padding="12,18"
-                                Click="BtnColler_Click"/>
+                    <!-- PRESSE-PAPIERS -->
+                    <StackPanel Width="125">
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center">
 
-                        <StackPanel>
-                            <Button Content="Couper"
-                                    Click="BtnCouper_Click"/>
-                            <Button Content="Copier"
-                                    Click="BtnCopier_Click"/>
+                            <Button Content="Coller"
+                                    FontSize="13"
+                                    Padding="12,18"
+                                    Click="BtnColler_Click"/>
+
+                            <StackPanel>
+                                <Button Content="Couper"
+                                        Click="BtnCouper_Click"/>
+                                <Button Content="Copier"
+                                        Click="BtnCopier_Click"/>
+                            </StackPanel>
                         </StackPanel>
+
+                        <TextBlock Text="Presse-papiers"
+                                   Style="{StaticResource GroupTitle}"/>
                     </StackPanel>
 
-                    <TextBlock Text="Presse-papiers"
-                               Style="{StaticResource GroupTitle}"/>
-                </StackPanel>
+                    <Separator Margin="8,5"/>
 
-                <Separator Margin="8,5"/>
+                    <!-- FORMATAGE DU TEXTE -->
+                    <StackPanel Width="450">
 
-                <!-- FORMATAGE DU TEXTE -->
-                <StackPanel Width="430">
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center"
+                                    Margin="0,2,0,5">
 
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Center"
-                                Margin="0,2,0,5">
+                            <ComboBox x:Name="cmbPolice"
+                                      Width="145"
+                                      Height="30"
+                                      Margin="3"
+                                      SelectedIndex="0"
+                                      SelectionChanged="CmbPolice_SelectionChanged"
+                                      ToolTip="Choisir la police">
 
-                        <ComboBox x:Name="cmbPolice"
-                                  Width="145"
-                                  Height="30"
-                                  Margin="3"
-                                  SelectedIndex="0"
-                                  SelectionChanged="CmbPolice_SelectionChanged"
-                                  ToolTip="Choisir la police">
+                                <ComboBoxItem Content="Segoe UI"/>
+                                <ComboBoxItem Content="Arial"/>
+                                <ComboBoxItem Content="Calibri"/>
+                                <ComboBoxItem Content="Times New Roman"/>
+                                <ComboBoxItem Content="Verdana"/>
+                                <ComboBoxItem Content="Georgia"/>
+                                <ComboBoxItem Content="Comic Sans MS"/>
+                            </ComboBox>
 
-                            <ComboBoxItem Content="Segoe UI"/>
-                            <ComboBoxItem Content="Arial"/>
-                            <ComboBoxItem Content="Calibri"/>
-                            <ComboBoxItem Content="Times New Roman"/>
-                            <ComboBoxItem Content="Verdana"/>
-                            <ComboBoxItem Content="Georgia"/>
-                            <ComboBoxItem Content="Comic Sans MS"/>
+                            <ComboBox x:Name="cmbTaille"
+                                      Width="65"
+                                      Height="30"
+                                      Margin="3"
+                                      SelectedIndex="3"
+                                      SelectionChanged="CmbTaille_SelectionChanged"
+                                      ToolTip="Taille du texte">
+
+                                <ComboBoxItem Content="8"/>
+                                <ComboBoxItem Content="10"/>
+                                <ComboBoxItem Content="12"/>
+                                <ComboBoxItem Content="18"/>
+                                <ComboBoxItem Content="20"/>
+                                <ComboBoxItem Content="24"/>
+                                <ComboBoxItem Content="28"/>
+                                <ComboBoxItem Content="32"/>
+                                <ComboBoxItem Content="36"/>
+                                <ComboBoxItem Content="48"/>
+                                <ComboBoxItem Content="60"/>
+                                <ComboBoxItem Content="72"/>
+                            </ComboBox>
+
+                            <!-- COULEURS DU TEXTE -->
+                            <ComboBox x:Name="cmbCouleurTexte"
+                                      Width="125"
+                                      Height="30"
+                                      Margin="3"
+                                      SelectedIndex="0"
+                                      SelectionChanged="CmbCouleurTexte_SelectionChanged"
+                                      ToolTip="Couleur du texte">
+
+                                <ComboBoxItem Content="Noir" Tag="#000000"/>
+                                <ComboBoxItem Content="Blanc" Tag="#FFFFFF"/>
+                                <ComboBoxItem Content="Rouge" Tag="#FF0000"/>
+                                <ComboBoxItem Content="Vert" Tag="#00FF00"/>
+                                <ComboBoxItem Content="Bleu" Tag="#0000FF"/>
+                                <ComboBoxItem Content="Jaune" Tag="#FFFF00"/>
+                                <ComboBoxItem Content="Orange" Tag="#FFA500"/>
+                                <ComboBoxItem Content="Violet" Tag="#800080"/>
+                                <ComboBoxItem Content="Bleu clair" Tag="#ADD8E6"/>
+                                <ComboBoxItem Content="Rose" Tag="#FFC0CB"/>
+                                <ComboBoxItem Content="Marron" Tag="#A52A2A"/>
+                                <ComboBoxItem Content="Gris" Tag="#808080"/>
+                                <ComboBoxItem Content="Turquoise" Tag="#008080"/>
+                                <ComboBoxItem Content="Or" Tag="#FFD700"/>
+                                <ComboBoxItem Content="Vert clair" Tag="#90EE90"/>
+                                <ComboBoxItem Content="Rose vif" Tag="#FF69B4"/>
+
+                            </ComboBox>
+
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal"
+                                    HorizontalAlignment="Center">
+
+                            <Button Content="G"
+                                    FontWeight="Bold"
+                                    Width="35"
+                                    Click="BtnGras_Click"
+                                    ToolTip="Mettre en gras"/>
+
+                            <Button Content="I"
+                                    FontStyle="Italic"
+                                    Width="35"
+                                    Click="BtnItalique_Click"
+                                    ToolTip="Mettre en italique"/>
+
+                            <Button Width="35"
+                                    Click="BtnSouligne_Click"
+                                    ToolTip="Souligner">
+                                <TextBlock Text="S"
+                                           TextDecorations="Underline"/>
+                            </Button>
+
+                            <Separator Margin="4,2"/>
+
+                            <Button Content="≡"
+                                    FontSize="18"
+                                    Width="35"
+                                    Click="BtnAlignerGauche_Click"
+                                    ToolTip="Aligner à gauche"/>
+
+                            <Button Content="☰"
+                                    FontSize="18"
+                                    Width="35"
+                                    Click="BtnCentrerTexte_Click"
+                                    ToolTip="Centrer le texte"/>
+
+                            <Button Content="≡"
+                                    FontSize="18"
+                                    Width="35"
+                                    Click="BtnAlignerDroite_Click"
+                                    ToolTip="Aligner à droite"/>
+
+                            <Button Content="Zone de texte"
+                                    Click="BtnTexte_Click"/>
+                        </StackPanel>
+
+                        <TextBlock Text="Mise en forme du texte"
+                                   Style="{StaticResource GroupTitle}"/>
+                    </StackPanel>
+
+                    <Separator Margin="8,5"/>
+
+                    <!-- FORMES -->
+                    <StackPanel Width="220">
+
+                        <ComboBox x:Name="cmbFormes"
+                                  Width="200"
+                                  Height="38"
+                                  Margin="5"
+                                  Padding="5"
+                                  IsEditable="False"
+                                  SelectedIndex="-1"
+                                  SelectionChanged="CmbFormes_SelectionChanged"
+                                  ToolTip="Choisir une forme">
+
+                            <ComboBoxItem Content="Rectangle" Tag="Rectangle"/>
+                            <ComboBoxItem Content="Rectangle arrondi" Tag="RoundedRectangle"/>
+                            <ComboBoxItem Content="Ellipse" Tag="Ellipse"/>
+                            <ComboBoxItem Content="Losange" Tag="Diamond"/>
+                            <ComboBoxItem Content="Triangle" Tag="Triangle"/>
+                            <ComboBoxItem Content="Triangle inversé" Tag="InvertedTriangle"/>
+                            <ComboBoxItem Content="Pentagone" Tag="Pentagon"/>
+                            <ComboBoxItem Content="Hexagone" Tag="Hexagon"/>
+                            <ComboBoxItem Content="Carré" Tag="Square"/>
+                            <ComboBoxItem Content="Demi-cercle" Tag="SemiCircle"/>
+                            <ComboBoxItem Content="Croix" Tag="Cross"/>
+                            <ComboBoxItem Content="Plus" Tag="Plus"/>
+                            <ComboBoxItem Content="Étoile à 5 branches" Tag="Star5"/>
+                            <ComboBoxItem Content="Étoile à 6 branches" Tag="Star6"/>
+                            <ComboBoxItem Content="Flèche droite" Tag="Arrow"/>
+                            <ComboBoxItem Content="Flèche gauche" Tag="ArrowLeft"/>
+                            <ComboBoxItem Content="Flèche vers le haut" Tag="ArrowUp"/>
+                            <ComboBoxItem Content="Flèche vers le bas" Tag="ArrowDown"/>
+                            <ComboBoxItem Content="Flèche double" Tag="DoubleArrow"/>
+                            <ComboBoxItem Content="Ligne diagonale" Tag="Line"/>
+
                         </ComboBox>
 
-                        <ComboBox x:Name="cmbTaille"
-                                  Width="65"
-                                  Height="30"
-                                  Margin="3"
-                                  SelectedIndex="3"
-                                  SelectionChanged="CmbTaille_SelectionChanged"
-                                  ToolTip="Taille du texte">
+                        <TextBlock Text="Formes (20)"
+                                   Style="{StaticResource GroupTitle}"/>
+                    </StackPanel>
 
-                            <ComboBoxItem Content="8"/>
-                            <ComboBoxItem Content="10"/>
-                            <ComboBoxItem Content="12"/>
-                            <ComboBoxItem Content="18"/>
-                            <ComboBoxItem Content="20"/>
-                            <ComboBoxItem Content="24"/>
-                            <ComboBoxItem Content="28"/>
-                            <ComboBoxItem Content="32"/>
-                            <ComboBoxItem Content="36"/>
-                            <ComboBoxItem Content="48"/>
-                            <ComboBoxItem Content="60"/>
-                            <ComboBoxItem Content="72"/>
-                        </ComboBox>
+                    <Separator Margin="8,5"/>
 
-                        <ComboBox x:Name="cmbCouleurTexte"
-                                  Width="105"
-                                  Height="30"
-                                  Margin="3"
-                                  SelectedIndex="0"
-                                  SelectionChanged="CmbCouleurTexte_SelectionChanged"
-                                  ToolTip="Couleur du texte">
+                    <!-- MODIFICATION ET CALQUES -->
+                    <StackPanel Width="215">
 
-                            <ComboBoxItem Content="Noir" Tag="#000000"/>
-                            <ComboBoxItem Content="Rouge" Tag="#FF0000"/>
-                            <ComboBoxItem Content="Bleu" Tag="#0000FF"/>
-                            <ComboBoxItem Content="Vert" Tag="#008000"/>
-                            <ComboBoxItem Content="Orange" Tag="#FFA500"/>
-                            <ComboBoxItem Content="Violet" Tag="#800080"/>
-                            <ComboBoxItem Content="Blanc" Tag="#FFFFFF"/>
-                        </ComboBox>
+                        <WrapPanel HorizontalAlignment="Center">
+
+                            <Button Content="Image"
+                                    Click="BtnImage_Click"/>
+
+                            <Button Content="Arrière-plan"
+                                    Click="BtnArrierePlan_Click"/>
+
+                            <Button Content="Rotation"
+                                    Click="BtnRotation_Click"/>
+
+                            <Button Content="Supprimer élément"
+                                    Click="BtnSupprimerElement_Click"/>
+
+                            <Button Content="🔒 Verrouiller / Déverrouiller"
+                                    Click="BtnVerrouiller_Click"
+                                    ToolTip="Empêcher ou autoriser la modification de l'élément sélectionné"
+                                    FontSize="11"
+                                    Padding="5,5"/>
+
+                        </WrapPanel>
+
+                        <Separator Margin="5,3"/>
+
+                        <TextBlock Text="Ordre des calques"
+                                   Style="{StaticResource GroupTitle}"/>
+
+                        <WrapPanel HorizontalAlignment="Center">
+
+                            <Button Content="Premier plan"
+                                    FontSize="11"
+                                    Padding="5,5"
+                                    Click="BtnPremierPlan_Click"/>
+
+                            <Button Content="Arrière-plan"
+                                    FontSize="11"
+                                    Padding="5,5"
+                                    Click="BtnArrierePlanCalque_Click"/>
+
+                            <Button Content="Avancer"
+                                    FontSize="11"
+                                    Padding="5,5"
+                                    Click="BtnAvancerCalque_Click"/>
+
+                            <Button Content="Reculer"
+                                    FontSize="11"
+                                    Padding="5,5"
+                                    Click="BtnReculerCalque_Click"/>
+
+                        </WrapPanel>
+
+                        <TextBlock Text="Modification"
+                                   Style="{StaticResource GroupTitle}"/>
 
                     </StackPanel>
 
-                    <StackPanel Orientation="Horizontal"
-                                HorizontalAlignment="Center">
+                    <Separator Margin="8,5"/>
 
-                        <Button Content="G"
-                                FontWeight="Bold"
-                                Width="35"
-                                Click="BtnGras_Click"
-                                ToolTip="Mettre en gras"/>
+                    <!-- DIAPOSITIVES -->
+                    <StackPanel Width="145">
+                        <WrapPanel HorizontalAlignment="Center">
 
-                        <Button Content="I"
-                                FontStyle="Italic"
-                                Width="35"
-                                Click="BtnItalique_Click"
-                                ToolTip="Mettre en italique"/>
+                            <Button Content="Ajouter"
+                                    Click="BtnNouvelleDiapositive_Click"/>
 
-                        <Button Width="35"
-                                Click="BtnSouligne_Click"
-                                ToolTip="Souligner">
-                            <TextBlock Text="S"
-                                       TextDecorations="Underline"/>
-                        </Button>
+                            <Button Content="Supprimer"
+                                    Click="BtnSupprimerDiapositive_Click"/>
 
-                        <Separator Margin="4,2"/>
+                        </WrapPanel>
 
-                        <Button Content="≡"
-                                FontSize="18"
-                                Width="35"
-                                Click="BtnAlignerGauche_Click"
-                                ToolTip="Aligner à gauche"/>
-
-                        <Button Content="☰"
-                                FontSize="18"
-                                Width="35"
-                                Click="BtnCentrerTexte_Click"
-                                ToolTip="Centrer le texte"/>
-
-                        <Button Content="≡"
-                                FontSize="18"
-                                Width="35"
-                                Click="BtnAlignerDroite_Click"
-                                ToolTip="Aligner à droite"/>
-
-                        <Button Content="Zone de texte"
-                                Click="BtnTexte_Click"/>
+                        <TextBlock Text="Diapositives"
+                                   Style="{StaticResource GroupTitle}"/>
                     </StackPanel>
 
-                    <TextBlock Text="Mise en forme du texte"
-                               Style="{StaticResource GroupTitle}"/>
                 </StackPanel>
-
-                <Separator Margin="8,5"/>
-
-                <!-- FORMES -->
-                <StackPanel Width="220">
-
-                    <ComboBox x:Name="cmbFormes"
-                              Width="200"
-                              Height="38"
-                              Margin="5"
-                              Padding="5"
-                              IsEditable="False"
-                              SelectedIndex="-1"
-                              SelectionChanged="CmbFormes_SelectionChanged"
-                              ToolTip="Choisir une forme">
-
-                        <ComboBoxItem Content="Rectangle" Tag="Rectangle"/>
-                        <ComboBoxItem Content="Rectangle arrondi" Tag="RoundedRectangle"/>
-                        <ComboBoxItem Content="Ellipse" Tag="Ellipse"/>
-                        <ComboBoxItem Content="Losange" Tag="Diamond"/>
-                        <ComboBoxItem Content="Triangle" Tag="Triangle"/>
-                        <ComboBoxItem Content="Triangle inversé" Tag="InvertedTriangle"/>
-                        <ComboBoxItem Content="Pentagone" Tag="Pentagon"/>
-                        <ComboBoxItem Content="Hexagone" Tag="Hexagon"/>
-                        <ComboBoxItem Content="Carré" Tag="Square"/>
-                        <ComboBoxItem Content="Demi-cercle" Tag="SemiCircle"/>
-                        <ComboBoxItem Content="Croix" Tag="Cross"/>
-                        <ComboBoxItem Content="Plus" Tag="Plus"/>
-                        <ComboBoxItem Content="Étoile à 5 branches" Tag="Star5"/>
-                        <ComboBoxItem Content="Étoile à 6 branches" Tag="Star6"/>
-                        <ComboBoxItem Content="Flèche droite" Tag="Arrow"/>
-                        <ComboBoxItem Content="Flèche gauche" Tag="ArrowLeft"/>
-                        <ComboBoxItem Content="Flèche vers le haut" Tag="ArrowUp"/>
-                        <ComboBoxItem Content="Flèche vers le bas" Tag="ArrowDown"/>
-                        <ComboBoxItem Content="Flèche double" Tag="DoubleArrow"/>
-                        <ComboBoxItem Content="Ligne diagonale" Tag="Line"/>
-
-                    </ComboBox>
-
-                    <TextBlock Text="Formes (20)"
-                               Style="{StaticResource GroupTitle}"/>
-                </StackPanel>
-
-                <Separator Margin="8,5"/>
-
-                <!-- MODIFICATION ET CALQUES -->
-                <StackPanel Width="215">
-
-                    <WrapPanel HorizontalAlignment="Center">
-
-                        <Button Content="Image"
-                                Click="BtnImage_Click"/>
-
-                        <Button Content="Arrière-plan"
-                                Click="BtnArrierePlan_Click"/>
-
-                        <Button Content="Rotation"
-                                Click="BtnRotation_Click"/>
-
-                        <Button Content="Supprimer élément"
-                                Click="BtnSupprimerElement_Click"/>
-
-                        <!-- NOUVEAU : VERROUILLAGE -->
-                        <Button Content="🔒 Verrouiller / Déverrouiller"
-                                Click="BtnVerrouiller_Click"
-                                ToolTip="Empêcher ou autoriser la modification de l'élément sélectionné"
-                                FontSize="11"
-                                Padding="5,5"/>
-
-                    </WrapPanel>
-
-                    <Separator Margin="5,3"/>
-
-                    <TextBlock Text="Ordre des calques"
-                               Style="{StaticResource GroupTitle}"/>
-
-                    <WrapPanel HorizontalAlignment="Center">
-
-                        <Button Content="Premier plan"
-                                FontSize="11"
-                                Padding="5,5"
-                                Click="BtnPremierPlan_Click"/>
-
-                        <Button Content="Arrière-plan"
-                                FontSize="11"
-                                Padding="5,5"
-                                Click="BtnArrierePlanCalque_Click"/>
-
-                        <Button Content="Avancer"
-                                FontSize="11"
-                                Padding="5,5"
-                                Click="BtnAvancerCalque_Click"/>
-
-                        <Button Content="Reculer"
-                                FontSize="11"
-                                Padding="5,5"
-                                Click="BtnReculerCalque_Click"/>
-
-                    </WrapPanel>
-
-                    <TextBlock Text="Modification"
-                               Style="{StaticResource GroupTitle}"/>
-
-                </StackPanel>
-
-                <Separator Margin="8,5"/>
-
-                <!-- DIAPOSITIVES -->
-                <StackPanel Width="145">
-                    <WrapPanel HorizontalAlignment="Center">
-
-                        <Button Content="Ajouter"
-                                Click="BtnNouvelleDiapositive_Click"/>
-
-                        <Button Content="Supprimer"
-                                Click="BtnSupprimerDiapositive_Click"/>
-
-                    </WrapPanel>
-
-                    <TextBlock Text="Diapositives"
-                               Style="{StaticResource GroupTitle}"/>
-                </StackPanel>
-
-            </StackPanel>
+            </ScrollViewer>
         </Border>
 
         <!-- ZONE DE TRAVAIL -->
@@ -708,7 +725,9 @@
                                    Margin="2,8,2,3"/>
 
                         <Button Content="Choisir une couleur"
-                                IsEnabled="False"/>
+                                Click="BtnCouleurRemplissage_Click"
+                                Padding="5"
+                                ToolTip="Modifier la couleur de la forme sélectionnée"/>
 
                         <TextBlock Text="Rotation"
                                    Margin="2,12,2,3"/>
