@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -70,7 +69,9 @@ namespace PresentationApp.UI.Canvas
                 return;
 
             int maximum = _diapositiveAffichee.Elements
-                .Max(e => e.ZIndex);
+                .Select(e => e.ZIndex)
+                .DefaultIfEmpty(0)
+                .Max();
 
             _elementSelectionne.ZIndex = maximum + 1;
 
@@ -84,7 +85,9 @@ namespace PresentationApp.UI.Canvas
                 return;
 
             int minimum = _diapositiveAffichee.Elements
-                .Min(e => e.ZIndex);
+                .Select(e => e.ZIndex)
+                .DefaultIfEmpty(0)
+                .Min();
 
             _elementSelectionne.ZIndex = minimum - 1;
 
@@ -119,8 +122,7 @@ namespace PresentationApp.UI.Canvas
 
             int nouvelIndex = index + direction;
 
-            if (nouvelIndex < 0 ||
-                nouvelIndex >= elements.Count)
+            if (nouvelIndex < 0 || nouvelIndex >= elements.Count)
                 return;
 
             SlideElement elementTemporaire = elements[index];
@@ -139,25 +141,12 @@ namespace PresentationApp.UI.Canvas
             if (_diapositiveAffichee == null)
                 return;
 
-            List<SlideElement> elements =
-                _diapositiveAffichee.Elements
-                    .OrderBy(e => e.ZIndex)
-                    .ToList();
-
-            for (int i = 0; i < elements.Count; i++)
+            foreach (UIElement enfant in Children)
             {
-                SlideElement element = elements[i];
-
-                element.ZIndex = i;
-
-                foreach (UIElement enfant in Children)
+                if (enfant is FrameworkElement visual &&
+                    visual.Tag is SlideElement element)
                 {
-                    if (enfant is FrameworkElement visual &&
-                        ReferenceEquals(visual.Tag, element))
-                    {
-                        SetZIndex(visual, element.ZIndex);
-                        break;
-                    }
+                    SetZIndex(visual, element.ZIndex);
                 }
             }
 
@@ -299,7 +288,11 @@ namespace PresentationApp.UI.Canvas
             Cursor = Cursors.Arrow;
 
             if (slide == null)
+            {
+                Background = Brushes.White;
+                CreerCadreSelection();
                 return;
+            }
 
             try
             {
@@ -351,6 +344,9 @@ namespace PresentationApp.UI.Canvas
         {
             visual.PreviewMouseLeftButtonDown += (sender, e) =>
             {
+                if (element.IsLocked)
+                    return;
+
                 SelectionnerElement(element, visual);
 
                 _positionInitiale = e.GetPosition(this);
@@ -361,6 +357,9 @@ namespace PresentationApp.UI.Canvas
 
             visual.PreviewMouseMove += (sender, e) =>
             {
+                if (element.IsLocked)
+                    return;
+
                 if (Mouse.LeftButton != MouseButtonState.Pressed)
                     return;
 
@@ -432,6 +431,47 @@ namespace PresentationApp.UI.Canvas
         }
 
         // =====================================================
+        // SELECTION DEPUIS LA LISTE DES CALQUES
+        // =====================================================
+
+        public void SelectionnerElementDepuisListe(SlideElement element)
+        {
+            if (element == null)
+                return;
+
+            foreach (UIElement enfant in Children)
+            {
+                if (enfant is FrameworkElement visuel &&
+                    ReferenceEquals(visuel.Tag, element))
+                {
+                    SelectionnerElement(element, visuel);
+                    return;
+                }
+            }
+        }
+
+        // =====================================================
+        // VERROUILLAGE
+        // =====================================================
+
+        public void ActualiserEtatVerrouillage()
+        {
+            if (_elementSelectionne == null ||
+                _visuelSelectionne == null)
+                return;
+
+            _visuelSelectionne.IsHitTestVisible =
+                !_elementSelectionne.IsLocked;
+
+            if (_elementSelectionne.IsLocked)
+            {
+                _deplacementEnCours = false;
+            }
+
+            ActualiserCadreSelection();
+        }
+
+        // =====================================================
         // ACTUALISATION D'UN ELEMENT
         // =====================================================
 
@@ -441,11 +481,17 @@ namespace PresentationApp.UI.Canvas
                 _visuelSelectionne == null)
                 return;
 
+            if (_elementSelectionne.IsLocked)
+                return;
+
             _visuelSelectionne.Width = _elementSelectionne.Width;
             _visuelSelectionne.Height = _elementSelectionne.Height;
 
             SetLeft(_visuelSelectionne, _elementSelectionne.X);
             SetTop(_visuelSelectionne, _elementSelectionne.Y);
+
+            _visuelSelectionne.RenderTransformOrigin =
+                new Point(0.5, 0.5);
 
             _visuelSelectionne.RenderTransform =
                 new RotateTransform(_elementSelectionne.Rotation);
@@ -454,6 +500,23 @@ namespace PresentationApp.UI.Canvas
                 _visuelSelectionne is TextBox zoneTexte)
             {
                 ActualiserStyleTexte(texte, zoneTexte);
+            }
+
+            if (_elementSelectionne is ShapeElement forme &&
+                _visuelSelectionne is Shape formeVisuelle)
+            {
+                formeVisuelle.Fill = ConvertirCouleur(
+                    forme.Style?.FillColor,
+                    Brushes.LightBlue);
+
+                formeVisuelle.Stroke = ConvertirCouleur(
+                    forme.Style?.StrokeColor,
+                    Brushes.Black);
+
+                formeVisuelle.StrokeThickness =
+                    forme.Style?.StrokeThickness > 0
+                        ? forme.Style.StrokeThickness
+                        : 2;
             }
 
             ActualiserCadreSelection();
@@ -559,20 +622,28 @@ namespace PresentationApp.UI.Canvas
 
             _cadreSelection.Visibility = Visibility.Visible;
 
-            PositionnerPoignee(0, x - TaillePoignee / 2,
+            PositionnerPoignee(
+                0, x - TaillePoignee / 2, y - TaillePoignee / 2);
+
+            PositionnerPoignee(
+                1, x + largeur - TaillePoignee / 2,
                 y - TaillePoignee / 2);
 
-            PositionnerPoignee(1, x + largeur - TaillePoignee / 2,
-                y - TaillePoignee / 2);
-
-            PositionnerPoignee(2, x - TaillePoignee / 2,
+            PositionnerPoignee(
+                2, x - TaillePoignee / 2,
                 y + hauteur - TaillePoignee / 2);
 
-            PositionnerPoignee(3, x + largeur - TaillePoignee / 2,
+            PositionnerPoignee(
+                3, x + largeur - TaillePoignee / 2,
                 y + hauteur - TaillePoignee / 2);
 
             foreach (Thumb poignee in _poignees)
-                poignee.Visibility = Visibility.Visible;
+            {
+                poignee.Visibility =
+                    _elementSelectionne.IsLocked
+                        ? Visibility.Collapsed
+                        : Visibility.Visible;
+            }
         }
 
         private void PositionnerPoignee(int index, double x, double y)
@@ -594,6 +665,7 @@ namespace PresentationApp.UI.Canvas
         {
             if (_elementSelectionne == null ||
                 _visuelSelectionne == null ||
+                _elementSelectionne.IsLocked ||
                 sender is not Thumb poignee)
                 return;
 
@@ -661,8 +733,11 @@ namespace PresentationApp.UI.Canvas
                 nouveauY = 0;
             }
 
-            nouvelleLargeur = Math.Max(TailleMinimum, nouvelleLargeur);
-            nouvelleHauteur = Math.Max(TailleMinimum, nouvelleHauteur);
+            nouvelleLargeur = Math.Max(
+                TailleMinimum, nouvelleLargeur);
+
+            nouvelleHauteur = Math.Max(
+                TailleMinimum, nouvelleHauteur);
 
             _elementSelectionne.X = nouveauX;
             _elementSelectionne.Y = nouveauY;
@@ -819,6 +894,7 @@ namespace PresentationApp.UI.Canvas
                     zoneTexte.Text == TexteSousTitre)
                 {
                     zoneTexte.Text = string.Empty;
+
                     zoneTexte.Foreground =
                         ConvertirCouleurTexte(element.Style?.TextColor);
                 }
@@ -857,10 +933,14 @@ namespace PresentationApp.UI.Canvas
         private FrameworkElement CreateShape(ShapeElement element)
         {
             Brush remplissage =
-                ConvertirCouleur(element.Style?.FillColor, Brushes.LightBlue);
+                ConvertirCouleur(
+                    element.Style?.FillColor,
+                    Brushes.LightBlue);
 
             Brush contour =
-                ConvertirCouleur(element.Style?.StrokeColor, Brushes.Black);
+                ConvertirCouleur(
+                    element.Style?.StrokeColor,
+                    Brushes.Black);
 
             double epaisseur =
                 element.Style?.StrokeThickness > 0
@@ -1153,23 +1233,5 @@ namespace PresentationApp.UI.Canvas
                 Child = image
             };
         }
-
-        public void SelectionnerElementDepuisListe(SlideElement element)
-        {
-            if (element == null)
-                return;
-
-            for (int i = 0; i < Children.Count; i++)
-            {
-                if (Children[i] is FrameworkElement visuel &&
-                    ReferenceEquals(visuel.Tag, element))
-                {
-                    SelectionnerElement(element, visuel);
-                    return;
-                }
-            }
-        }
-
     }
-
 }
