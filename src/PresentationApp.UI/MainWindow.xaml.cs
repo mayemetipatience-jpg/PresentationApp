@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Win32;
 using PresentationApp.Core.Models;
+using PresentationApp.UI.Themes;
 
 namespace PresentationApp.UI;
 
@@ -112,13 +113,28 @@ public partial class MainWindow : Window
         lstDiapositives.SelectedIndex = 0;
     }
 
+    // CREATION D'UNE DIAPOSITIVE AVEC LE THEME ACTIF
+
     private Slide CreerDiapositive(int ordre)
     {
+        // Récupérer le thème actuellement sélectionné.
+        PresentationTheme? theme = PresentationTheme
+            .GetThemes()
+            .FirstOrDefault(t => t.Name == _presentation.ThemeName);
+
+        // Utiliser le thème Moderne bleu si le thème enregistré
+        // est introuvable.
+        theme ??= PresentationTheme
+            .GetThemes()
+            .First(t => t.Name == "Moderne bleu");
+
         var diapositive = new Slide
         {
-            Order = ordre
+            Order = ordre,
+            BackgroundColor = theme.BackgroundColor
         };
 
+        // Zone de titre.
         diapositive.Elements.Add(new TextElement
         {
             X = 100,
@@ -129,10 +145,14 @@ public partial class MainWindow : Window
             Style = new ElementStyle
             {
                 TextAlignment = "Center",
-                FontSize = 18
+                FontFamily = theme.FontFamily,
+                FontSize = 32,
+                TextColor = theme.TitleColor,
+                IsBold = true
             }
         });
 
+        // Zone de sous-titre.
         diapositive.Elements.Add(new TextElement
         {
             X = 100,
@@ -143,7 +163,9 @@ public partial class MainWindow : Window
             Style = new ElementStyle
             {
                 TextAlignment = "Center",
-                FontSize = 18
+                FontFamily = theme.FontFamily,
+                FontSize = 20,
+                TextColor = theme.TextColor
             }
         });
 
