@@ -1,6 +1,9 @@
-using System.Collections.ObjectModel;
 using PresentationApp.Core.Models;
 using PresentationApp.Core.Services;
+using PresentationApp.IO.Serialization;
+using PresentationApp.UI.Services;
+using System.Collections.ObjectModel;
+using System.IO;
 using CoreCommandManager = PresentationApp.Core.Commands.CommandManager;
 
 namespace PresentationApp.UI.ViewModels;
@@ -9,8 +12,11 @@ public class MainViewModel : ObservableObject
 {
     private readonly PresentationService _slideService;
     private readonly ElementService _elementService;
+    private readonly AutoSaveTimer _autoSave;
     private Slide? _selectedSlide;
     private SlideElement? _selectedElement;
+    private string? _cheminFichier;
+    private string? _errorMessage;
 
     public MainViewModel() : this(new Presentation())
     {
@@ -38,6 +44,10 @@ public class MainViewModel : ObservableObject
             presentation.Slides.Add(new Slide());
 
         RefreshSlides();
+
+        // Sauvegarde de secours toutes les 2 minutes, si la présentation a déjà un fichier.
+        _autoSave = new AutoSaveTimer(() => CurrentPresentation, () => CheminFichier);
+        _autoSave.Demarrer();
     }
 
     // Historique Undo/Redo. Son evenement Changed se declenche apres chaque action,
@@ -51,6 +61,20 @@ public class MainViewModel : ObservableObject
     public ObservableCollection<Slide> Slides { get; } = new();
 
     public int SlideCount => Slides.Count;
+
+    // Fichier actuellement ouvert ou enregistré. Vide tant que la présentation n'a jamais été enregistrée.
+    public string? CheminFichier
+    {
+        get => _cheminFichier;
+        private set => SetProperty(ref _cheminFichier, value);
+    }
+
+    // Message à afficher quand une opération échoue. Vide si tout va bien.
+    public string? ErrorMessage
+    {
+        get => _errorMessage;
+        private set => SetProperty(ref _errorMessage, value);
+    }
 
     public Slide? SelectedSlide
     {
@@ -84,6 +108,58 @@ public class MainViewModel : ObservableObject
     public RelayCommand DeleteElementCommand { get; }
     public RelayCommand UndoCommand { get; }
     public RelayCommand RedoCommand { get; }
+
+    // Enregistre la présentation dans le fichier indiqué.
+    public void Enregistrer(string chemin)
+    {
+        try
+        {
+            ProjectFileService.Save(CurrentPresentation, chemin);
+            CheminFichier = chemin;
+            ErrorMessage = null;
+        }
+        catch (IOException ex)
+        {
+            ErrorMessage = "Impossible d'enregistrer le fichier : " + ex.Message;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            ErrorMessage = "Impossible d'enregistrer le fichier : " + ex.Message;
+        }
+    }
+
+    // Ouvre un fichier et remplace la présentation actuelle.
+    // Renvoie false si le fichier est illisible : ErrorMessage contient alors l'explication.
+    public bool Ouvrir(string chemin)
+    {
+        try
+        {
+            Presentation chargee = ProjectFileService.Open(chemin);
+
+            CurrentPresentation.Title = chargee.Title;
+            CurrentPresentation.Slides.Clear();
+            foreach (Slide slide in chargee.Slides)
+                CurrentPresentation.Slides.Add(slide);
+
+            // L'historique Undo/Redo ne doit pas annuler des actions sur l'ancien fichier.
+            History.Clear();
+
+            CheminFichier = chemin;
+            ErrorMessage = null;
+            RefreshSlides();
+            return true;
+        }
+        catch (CorruptFileException ex)
+        {
+            ErrorMessage = ex.Message;
+            return false;
+        }
+        catch (IOException ex)
+        {
+            ErrorMessage = "Impossible d'ouvrir le fichier : " + ex.Message;
+            return false;
+        }
+    }
 
     private void AddSlide()
     {
