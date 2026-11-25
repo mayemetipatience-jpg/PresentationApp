@@ -1,0 +1,114 @@
+<UserControl x:Class="PresentationApp.UI.Views.SlidePanelView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Panneau de gauche : miniatures des diapositives.
+         DataContext = SlideListViewModel -->
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/PresentationApp.UI;component/Resources/MiniaturesDiapositives.xaml"/>
+                <ResourceDictionary Source="/PresentationApp.UI;component/Resources/RubanStyles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Border Background="#F8F8F8" BorderBrush="#DDDDDD" BorderThickness="0,0,1,0">
+        <DockPanel Margin="8">
+
+            <TextBlock Text="Diapositives"
+                       DockPanel.Dock="Top"
+                       FontSize="14" FontWeight="SemiBold"
+                       Margin="4,4,4,2"/>
+
+            <TextBlock Text="Glisser pour réordonner, clic droit pour plus d'actions"
+                       DockPanel.Dock="Top"
+                       FontSize="10" Foreground="#888888" TextWrapping="Wrap"
+                       Margin="4,0,4,8"/>
+
+            <Button Content="+ Nouvelle diapositive"
+                    DockPanel.Dock="Bottom"
+                    Margin="2,8,2,2"
+                    Command="{Binding NouvelleCommand}"/>
+
+            <ListBox x:Name="lstDiapositives"
+                     ItemsSource="{Binding Slides}"
+                     SelectedItem="{Binding SelectedSlide, Mode=TwoWay}"
+                     Background="Transparent"
+                     BorderThickness="0"
+                     AllowDrop="True"
+                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                     PreviewMouseLeftButtonDown="Liste_PreviewMouseLeftButtonDown"
+                     PreviewMouseMove="Liste_PreviewMouseMove"
+                     PreviewMouseRightButtonDown="Liste_PreviewMouseRightButtonDown"
+                     DragOver="Liste_DragOver"
+                     Drop="Liste_Drop">
+
+                <!-- Menu du clic droit -->
+                <ListBox.ContextMenu>
+                    <ContextMenu>
+                        <MenuItem Header="Nouvelle diapositive" InputGestureText="Ctrl+M"
+                                  Command="{Binding NouvelleCommand}"/>
+                        <MenuItem Header="Dupliquer" Command="{Binding DupliquerCommand}"/>
+                        <MenuItem Header="Supprimer" Command="{Binding SupprimerCommand}"/>
+                        <Separator/>
+                        <MenuItem Header="Monter" Command="{Binding MonterCommand}"/>
+                        <MenuItem Header="Descendre" Command="{Binding DescendreCommand}"/>
+                    </ContextMenu>
+                </ListBox.ContextMenu>
+
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="ListBoxItem">
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Padding" Value="3"/>
+                        <Setter Property="Margin" Value="2,4"/>
+                    </Style>
+                </ListBox.ItemContainerStyle>
+
+                <ListBox.ItemTemplate>
+                    <DataTemplate>
+                        <StackPanel Margin="2">
+                            <!-- Une diapositive fait 960 x 540 : la Viewbox la réduit à la taille de la miniature -->
+                            <Border Background="White"
+                                    BorderBrush="#BBBBBB" BorderThickness="1"
+                                    Width="165" Height="93">
+                                <Viewbox Stretch="Uniform">
+                                    <Canvas Width="960" Height="540" ClipToBounds="True"
+                                            Background="{Binding BackgroundColor, FallbackValue=White}">
+                                        <ItemsControl ItemsSource="{Binding Elements}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <Canvas/>
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemContainerStyle>
+                                                <Style TargetType="ContentPresenter">
+                                                    <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                                    <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                                    <Setter Property="Panel.ZIndex" Value="{Binding ZIndex}"/>
+                                                </Style>
+                                            </ItemsControl.ItemContainerStyle>
+                                        </ItemsControl>
+                                    </Canvas>
+                                </Viewbox>
+                            </Border>
+
+                            <TextBlock HorizontalAlignment="Center"
+                                       FontSize="12" Foreground="#444444"
+                                       Margin="0,4,0,0">
+                                <TextBlock.Text>
+                                    <MultiBinding Converter="{StaticResource NumeroDiapositive}"
+                                                  StringFormat="Diapositive {0}">
+                                        <Binding/>
+                                        <Binding RelativeSource="{RelativeSource AncestorType=ListBox}"/>
+                                    </MultiBinding>
+                                </TextBlock.Text>
+                            </TextBlock>
+                        </StackPanel>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </DockPanel>
+    </Border>
+</UserControl>
