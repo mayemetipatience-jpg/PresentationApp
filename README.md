@@ -11,7 +11,7 @@ Application de présentation de type PowerPoint, développée en C# (.NET 10, WP
 - Thèmes et modèles de diapositives
 - Export PDF et images, mode présentation plein écran avec transitions (en cours)
 
-## Technologies
+## Technologie
 
 - C# 12, .NET 10
 - WPF (interface) avec le motif MVVM
@@ -40,8 +40,8 @@ Prérequis : Visual Studio avec la charge de travail « Développement .NET Desk
 
 ## L'équipe
 
-- Étudiant 1 : [nom], cheffe de projet, modèle de données, Undo/Redo, MainViewModel
-- Étudiant 2 : [nom], éditeur de canevas
+- Étudiant 1 : MAYEMETI PATIENCE, cheffe de projet, modèle de données, Undo/Redo, MainViewModel
+- Étudiant 2 : SOH FOTSO, éditeur de canevas
 - Étudiant 3 : [nom], interface principale et panneaux
 - Étudiant 4 : [nom], sauvegarde, export, thèmes et modèles
 - Étudiant 5 : [nom], mode présentation, transitions, documentation
