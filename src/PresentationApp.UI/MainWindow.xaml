@@ -176,7 +176,6 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="42"/>
             <RowDefinition Height="38"/>
-            <!-- Hauteur augmentée pour afficher tous les boutons du ruban -->
             <RowDefinition Height="190"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="28"/>
@@ -382,7 +381,7 @@
 
                 <Separator Margin="8,5"/>
 
-                <!-- 20 FORMES -->
+                <!-- FORMES -->
                 <StackPanel Width="220">
 
                     <ComboBox x:Name="cmbFormes"
@@ -453,28 +452,22 @@
                         <Button Content="Premier plan"
                                 FontSize="11"
                                 Padding="5,5"
-                                Click="BtnPremierPlan_Click"
-                                ToolTip="Mettre au premier plan"/>
+                                Click="BtnPremierPlan_Click"/>
 
-                        <!-- Attention : cet événement concerne le calque,
-                             et non la couleur d'arrière-plan de la diapositive. -->
                         <Button Content="Arrière-plan"
                                 FontSize="11"
                                 Padding="5,5"
-                                Click="BtnArrierePlanCalque_Click"
-                                ToolTip="Mettre à l'arrière-plan"/>
+                                Click="BtnArrierePlanCalque_Click"/>
 
                         <Button Content="Avancer"
                                 FontSize="11"
                                 Padding="5,5"
-                                Click="BtnAvancerCalque_Click"
-                                ToolTip="Avancer d'un calque"/>
+                                Click="BtnAvancerCalque_Click"/>
 
                         <Button Content="Reculer"
                                 FontSize="11"
                                 Padding="5,5"
-                                Click="BtnReculerCalque_Click"
-                                ToolTip="Reculer d'un calque"/>
+                                Click="BtnReculerCalque_Click"/>
 
                     </WrapPanel>
 
@@ -563,7 +556,6 @@
                                                     Background="{Binding BackgroundColor, FallbackValue=White}">
 
                                                 <ItemsControl ItemsSource="{Binding Elements}">
-
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
                                                             <Canvas/>
@@ -572,15 +564,11 @@
 
                                                     <ItemsControl.ItemContainerStyle>
                                                         <Style TargetType="ContentPresenter">
-                                                            <Setter Property="Canvas.Left"
-                                                                    Value="{Binding X}"/>
-                                                            <Setter Property="Canvas.Top"
-                                                                    Value="{Binding Y}"/>
-                                                            <Setter Property="Panel.ZIndex"
-                                                                    Value="{Binding ZIndex}"/>
+                                                            <Setter Property="Canvas.Left" Value="{Binding X}"/>
+                                                            <Setter Property="Canvas.Top" Value="{Binding Y}"/>
+                                                            <Setter Property="Panel.ZIndex" Value="{Binding ZIndex}"/>
                                                         </Style>
                                                     </ItemsControl.ItemContainerStyle>
-
                                                 </ItemsControl>
                                             </Canvas>
                                         </Viewbox>
@@ -637,8 +625,9 @@
                         <TextBlock Text="Format de l'élément"
                                    FontSize="14"
                                    FontWeight="SemiBold"
-                                   Margin="0,5,0,18"/>
+                                   Margin="0,5,0,12"/>
 
+                        <!-- POSITION -->
                         <TextBlock Text="Position"
                                    FontWeight="SemiBold"
                                    Margin="0,5"/>
@@ -670,6 +659,7 @@
 
                         <Separator Margin="0,12"/>
 
+                        <!-- DIMENSIONS -->
                         <TextBlock Text="Dimensions"
                                    FontWeight="SemiBold"
                                    Margin="0,5"/>
@@ -701,6 +691,7 @@
 
                         <Separator Margin="0,12"/>
 
+                        <!-- APPARENCE -->
                         <TextBlock Text="Apparence"
                                    FontWeight="SemiBold"
                                    Margin="0,5"/>
@@ -725,6 +716,54 @@
                                    Text="0°"
                                    HorizontalAlignment="Center"
                                    Margin="2,5"/>
+
+                        <!-- NOUVEAU : LISTE DES CALQUES -->
+                        <Separator Margin="0,15"/>
+
+                        <TextBlock Text="Calques de la diapositive"
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Margin="0,5,0,8"/>
+
+                        <TextBlock Text="Sélectionnez un élément dans la liste :"
+                                   FontSize="11"
+                                   Foreground="#777777"
+                                   Margin="2,0,2,5"/>
+
+                        <ListBox x:Name="lstCalques"
+                                 Height="190"
+                                 Background="White"
+                                 BorderBrush="#CCCCCC"
+                                 BorderThickness="1"
+                                 SelectionMode="Single"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
+
+                            <ListBox.ItemContainerStyle>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Padding" Value="7"/>
+                                    <Setter Property="Margin" Value="2"/>
+                                    <Setter Property="HorizontalContentAlignment"
+                                            Value="Stretch"/>
+                                    <Setter Property="Cursor" Value="Hand"/>
+                                </Style>
+                            </ListBox.ItemContainerStyle>
+
+                            <ListBox.ItemTemplate>
+                                <DataTemplate>
+                                    <TextBlock Text="{Binding Nom}"
+                                               FontSize="12"
+                                               TextTrimming="CharacterEllipsis"
+                                               VerticalAlignment="Center"/>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+
+                        </ListBox>
+
+                        <TextBlock Text="Utilisez les boutons du ruban pour modifier l'ordre des calques."
+                                   TextWrapping="Wrap"
+                                   FontSize="10"
+                                   Foreground="#888888"
+                                   Margin="2,6,2,5"/>
 
                     </StackPanel>
                 </ScrollViewer>

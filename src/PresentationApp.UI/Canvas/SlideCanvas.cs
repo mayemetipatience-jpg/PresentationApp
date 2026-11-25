@@ -1153,5 +1153,23 @@ namespace PresentationApp.UI.Canvas
                 Child = image
             };
         }
+
+        public void SelectionnerElementDepuisListe(SlideElement element)
+        {
+            if (element == null)
+                return;
+
+            for (int i = 0; i < Children.Count; i++)
+            {
+                if (Children[i] is FrameworkElement visuel &&
+                    ReferenceEquals(visuel.Tag, element))
+                {
+                    SelectionnerElement(element, visuel);
+                    return;
+                }
+            }
+        }
+
     }
+
 }

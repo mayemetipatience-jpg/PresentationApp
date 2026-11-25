@@ -1,5 +1,8 @@
-﻿using System;
+﻿
+using System;
+using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -16,6 +19,7 @@ public partial class MainWindow : Window
     private SlideElement? _elementCopie;
 
     private bool _actualisationEnCours;
+    private bool _actualisationCalquesEnCours;
 
     private readonly string[] _couleursFond =
     {
@@ -36,6 +40,20 @@ public partial class MainWindow : Window
     private const string TexteSousTitre =
         "Cliquez pour ajouter un sous-titre";
 
+    // Élément affiché dans la liste des calques
+    private class CalqueItem
+    {
+        public SlideElement Element { get; set; }
+
+        public string Nom { get; set; }
+
+        public CalqueItem(SlideElement element, string nom)
+        {
+            Element = element;
+            Nom = nom;
+        }
+    }
+
     public MainWindow()
     {
         InitializeComponent();
@@ -45,6 +63,9 @@ public partial class MainWindow : Window
 
         slideCanvas.DiapositiveModifiee +=
             SlideCanvas_DiapositiveModifiee;
+
+        lstCalques.SelectionChanged +=
+            LstCalques_SelectionChanged;
 
         PreviewKeyDown += MainWindow_PreviewKeyDown;
 
@@ -111,6 +132,7 @@ public partial class MainWindow : Window
         {
             _elementActuel = null;
             slideCanvas.DisplaySlide(slide);
+            ActualiserListeCalques();
         }
     }
 
@@ -182,6 +204,7 @@ public partial class MainWindow : Window
 
         slideCanvas.DisplaySlide(slide);
         lstDiapositives.Items.Refresh();
+        ActualiserListeCalques();
     }
 
     // COPIER
@@ -258,6 +281,7 @@ public partial class MainWindow : Window
 
         slideCanvas.DisplaySlide(slide);
         lstDiapositives.Items.Refresh();
+        ActualiserListeCalques();
     }
 
     // CLONAGE
@@ -349,6 +373,7 @@ public partial class MainWindow : Window
 
         slideCanvas.DisplaySlide(slide);
         lstDiapositives.Items.Refresh();
+        ActualiserListeCalques();
     }
 
     // ARRIERE-PLAN DE LA DIAPOSITIVE
@@ -367,6 +392,7 @@ public partial class MainWindow : Window
 
         slideCanvas.DisplaySlide(slide);
         lstDiapositives.Items.Refresh();
+        ActualiserListeCalques();
     }
 
     // GESTION DES CALQUES
@@ -383,6 +409,7 @@ public partial class MainWindow : Window
 
         slideCanvas.MettreAuPremierPlan();
         lstDiapositives.Items.Refresh();
+        ActualiserListeCalques();
     }
 
     private void BtnArrierePlanCalque_Click(
@@ -397,6 +424,7 @@ public partial class MainWindow : Window
 
         slideCanvas.MettreEnArrierePlan();
         lstDiapositives.Items.Refresh();
+        ActualiserListeCalques();
     }
 
     private void BtnAvancerCalque_Click(
@@ -411,6 +439,7 @@ public partial class MainWindow : Window
 
         slideCanvas.AvancerDUnCalque();
         lstDiapositives.Items.Refresh();
+        ActualiserListeCalques();
     }
 
     private void BtnReculerCalque_Click(
@@ -425,6 +454,7 @@ public partial class MainWindow : Window
 
         slideCanvas.ReculerDUnCalque();
         lstDiapositives.Items.Refresh();
+        ActualiserListeCalques();
     }
 
     private void AfficherMessageSelectionCalque()
@@ -434,6 +464,94 @@ public partial class MainWindow : Window
             "Gestion des calques",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
+    }
+
+    // ACTUALISATION DE LA LISTE DES CALQUES
+
+    private void ActualiserListeCalques()
+    {
+        if (lstDiapositives.SelectedItem is not Slide slide)
+        {
+            lstCalques.ItemsSource = null;
+            return;
+        }
+
+        _actualisationCalquesEnCours = true;
+
+        SlideElement? elementSelectionne =
+            slideCanvas.ElementSelectionne ?? _elementActuel;
+
+        var elements = slide.Elements
+            .OrderByDescending(element => element.ZIndex)
+            .ToList();
+
+        List<CalqueItem> calques = new();
+
+        foreach (SlideElement element in elements)
+        {
+            string nom;
+
+            if (element is TextElement texte)
+            {
+                string contenu = texte.Text ?? "";
+
+                if (string.IsNullOrWhiteSpace(contenu))
+                    contenu = "Texte vide";
+
+                if (contenu.Length > 25)
+                    contenu = contenu.Substring(0, 25) + "...";
+
+                nom = "Texte : " + contenu;
+            }
+            else if (element is ShapeElement forme)
+            {
+                nom = "Forme : " + forme.ShapeType;
+            }
+            else if (element is ImageElement)
+            {
+                nom = "Image";
+            }
+            else
+            {
+                nom = "Élément";
+            }
+
+            calques.Add(new CalqueItem(element, nom));
+        }
+
+        lstCalques.ItemsSource = calques;
+
+        if (elementSelectionne != null)
+        {
+            foreach (CalqueItem calque in calques)
+            {
+                if (ReferenceEquals(
+                        calque.Element,
+                        elementSelectionne))
+                {
+                    lstCalques.SelectedItem = calque;
+                    break;
+                }
+            }
+        }
+
+        _actualisationCalquesEnCours = false;
+    }
+
+    // SÉLECTION DEPUIS LA LISTE DES CALQUES
+
+    private void LstCalques_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (_actualisationCalquesEnCours)
+            return;
+
+        if (lstCalques.SelectedItem is not CalqueItem calque)
+            return;
+
+        slideCanvas.SelectionnerElementDepuisListe(
+            calque.Element);
     }
 
     // ROTATION
@@ -504,6 +622,7 @@ public partial class MainWindow : Window
         slideCanvas.DisplaySlide(slide);
 
         lstDiapositives.Items.Refresh();
+        ActualiserListeCalques();
     }
 
     // SUPPRESSION D'UNE DIAPOSITIVE
@@ -762,6 +881,7 @@ public partial class MainWindow : Window
     private void SlideCanvas_DiapositiveModifiee()
     {
         lstDiapositives.Items.Refresh();
+        ActualiserListeCalques();
     }
 
     private void SlideCanvas_ElementSelectionChangee(
@@ -806,6 +926,8 @@ public partial class MainWindow : Window
             SelectionnerValeursFormatage(texte);
 
         _actualisationEnCours = false;
+
+        ActualiserListeCalques();
     }
 
     private void SelectionnerValeursFormatage(TextElement texte)
