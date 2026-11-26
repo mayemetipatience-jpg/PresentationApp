@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using PresentationApp.Core.Commands;
 using PresentationApp.Core.Models;
+using PresentationApp.UI.Themes;
 
 namespace PresentationApp.UI.ViewModels;
 
@@ -67,16 +68,22 @@ public class SlideListViewModel : ObservableObject
     // Le ViewModel ne connaît pas MessageBox : il reste testable sans fenêtre.
     public Func<string, bool>? Confirmer { get; set; }
 
-    // Crée une diapositive avec une zone de titre et une zone de sous-titre
-    public static Slide CreerDiapositive()
+    // Crée une diapositive avec une zone de titre et une zone de sous-titre,
+    // aux couleurs et à la police du thème de la présentation
+    public static Slide CreerDiapositive(string? nomTheme = null)
     {
-        var diapositive = new Slide();
+        PresentationTheme theme = PresentationTheme.Trouver(nomTheme);
+        var diapositive = new Slide { BackgroundColor = theme.BackgroundColor };
 
         diapositive.Elements.Add(new TextElement
         {
             X = 100, Y = 130, Width = 760, Height = 90,
             Text = TexteTitre,
-            Style = new ElementStyle { TextAlignment = "Center", FontSize = 18 }
+            Style = new ElementStyle
+            {
+                TextAlignment = "Center", FontFamily = theme.FontFamily,
+                FontSize = 32, IsBold = true, TextColor = theme.TitleColor
+            }
         });
 
         diapositive.Elements.Add(new TextElement
@@ -84,7 +91,11 @@ public class SlideListViewModel : ObservableObject
             X = 100, Y = 240, Width = 760, Height = 70,
             ZIndex = 1,
             Text = TexteSousTitre,
-            Style = new ElementStyle { TextAlignment = "Center", FontSize = 18 }
+            Style = new ElementStyle
+            {
+                TextAlignment = "Center", FontFamily = theme.FontFamily,
+                FontSize = 20, TextColor = theme.TextColor
+            }
         });
 
         return diapositive;
@@ -94,7 +105,7 @@ public class SlideListViewModel : ObservableObject
     private void AjouterDiapositive()
     {
         int position = SelectedSlide != null ? Slides.IndexOf(SelectedSlide) + 1 : Slides.Count;
-        Slide nouvelle = CreerDiapositive();
+        Slide nouvelle = CreerDiapositive(_main.CurrentPresentation.ThemeName);
 
         _main.History.Execute(new AddSlideCommand(_main.CurrentPresentation, nouvelle, position));
         _main.SelectedSlide = nouvelle;

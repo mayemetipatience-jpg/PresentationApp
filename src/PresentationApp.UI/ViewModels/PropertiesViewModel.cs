@@ -26,7 +26,8 @@ public class PropertiesViewModel : ObservableObject
         AlignerGaucheCommand = new RelayCommand(() => TextAlignment = "Left", () => EstTexte);
         AlignerCentreCommand = new RelayCommand(() => TextAlignment = "Center", () => EstTexte);
         AlignerDroiteCommand = new RelayCommand(() => TextAlignment = "Right", () => EstTexte);
-        PivoterCommand = new RelayCommand(() => Rotation = Rotation + 90, () => AElement);
+        PivoterCommand = new RelayCommand(() => Rotation = Rotation + 90, () => Modifiable);
+        VerrouillerCommand = new RelayCommand(BasculerVerrouillage, () => AElement);
 
         _main.PropertyChanged += (_, e) =>
         {
@@ -55,16 +56,26 @@ public class PropertiesViewModel : ObservableObject
 
     public bool AElement => Element != null;
     public bool AucunElement => Element == null;
-    public bool EstTexte => Element is TextElement;
-    public bool EstForme => Element is ShapeElement;
+
+    // Un élément verrouillé reste visible mais ne peut plus être modifié
+    public bool EstVerrouille => Element?.IsLocked == true;
+    public bool Modifiable => Element is { IsLocked: false };
+    public bool EstTexte => Element is TextElement && Modifiable;
+    public bool EstForme => Element is ShapeElement && Modifiable;
+    public string TexteVerrouillage => EstVerrouille ? "🔓 Déverrouiller" : "🔒 Verrouiller";
 
     public string Titre => Element switch
     {
+        null => "Aucun élément sélectionné",
         TextElement => "Zone de texte",
         ShapeElement forme => "Forme : " + forme.ShapeType,
         ImageElement => "Image",
-        _ => "Aucun élément sélectionné"
-    };
+        TableElement tableau => $"Tableau : {tableau.Rows} x {tableau.Columns}",
+        _ => "Élément"
+    } + (EstVerrouille ? "  (verrouillé)" : string.Empty);
+
+    // Prévient la fenêtre pour que le canevas bloque (ou débloque) l'élément
+    public event Action? VerrouillageModifie;
 
     // ---------- Listes proposées à l'utilisateur ----------
 
@@ -96,7 +107,7 @@ public class PropertiesViewModel : ObservableObject
         get => Element?.X ?? 0;
         set
         {
-            if (Element is { } el && Different(el.X, value))
+            if (ElementModifiable is { } el && Different(el.X, value))
                 _main.ElementOperations.Move(el, Math.Max(0, value), el.Y);
             Resynchroniser();
         }
@@ -107,7 +118,7 @@ public class PropertiesViewModel : ObservableObject
         get => Element?.Y ?? 0;
         set
         {
-            if (Element is { } el && Different(el.Y, value))
+            if (ElementModifiable is { } el && Different(el.Y, value))
                 _main.ElementOperations.Move(el, el.X, Math.Max(0, value));
             Resynchroniser();
         }
@@ -118,7 +129,7 @@ public class PropertiesViewModel : ObservableObject
         get => Element?.Width ?? 0;
         set
         {
-            if (Element is { } el && Different(el.Width, value))
+            if (ElementModifiable is { } el && Different(el.Width, value))
                 _main.ElementOperations.Resize(el, el.X, el.Y, Math.Max(TailleMinimum, value), el.Height);
             Resynchroniser();
         }
@@ -129,7 +140,7 @@ public class PropertiesViewModel : ObservableObject
         get => Element?.Height ?? 0;
         set
         {
-            if (Element is { } el && Different(el.Height, value))
+            if (ElementModifiable is { } el && Different(el.Height, value))
                 _main.ElementOperations.Resize(el, el.X, el.Y, el.Width, Math.Max(TailleMinimum, value));
             Resynchroniser();
         }
@@ -142,7 +153,7 @@ public class PropertiesViewModel : ObservableObject
         set
         {
             double angle = ((value % 360) + 360) % 360;
-            if (Element is { } el && Different(el.Rotation, angle))
+            if (ElementModifiable is { } el && Different(el.Rotation, angle))
                 _main.ElementOperations.Rotate(el, angle);
             Resynchroniser();
         }
@@ -237,6 +248,18 @@ public class PropertiesViewModel : ObservableObject
     public RelayCommand AlignerCentreCommand { get; }
     public RelayCommand AlignerDroiteCommand { get; }
     public RelayCommand PivoterCommand { get; }
+    public RelayCommand VerrouillerCommand { get; }
+
+    private void BasculerVerrouillage()
+    {
+        if (Element is not { } el)
+            return;
+
+        el.IsLocked = !el.IsLocked;
+        VerrouillageModifie?.Invoke();
+        RechargerCalques();
+        Recharger();
+    }
 
     // ---------- Liste des calques (du premier plan vers l'arrière-plan) ----------
 
@@ -273,14 +296,17 @@ public class PropertiesViewModel : ObservableObject
         AlignerCentreCommand.RaiseCanExecuteChanged();
         AlignerDroiteCommand.RaiseCanExecuteChanged();
         PivoterCommand.RaiseCanExecuteChanged();
+        VerrouillerCommand.RaiseCanExecuteChanged();
     }
+
+    private SlideElement? ElementModifiable => Modifiable ? Element : null;
 
     // ---------- Outils internes ----------
 
     // Copie le style, applique la modification, puis l'envoie à l'historique Undo/Redo
     private void ModifierStyle(Action<ElementStyle> modification)
     {
-        if (Element is not { } el)
+        if (ElementModifiable is not { } el)
             return;
 
         ElementStyle nouveau = ChangeStyleCommand.Copy(el.Style);
@@ -306,17 +332,28 @@ public class PropertiesViewModel : ObservableObject
 
     private static string NommerCalque(SlideElement element)
     {
+        string nom;
         switch (element)
         {
             case TextElement texte:
-                string contenu = string.IsNullOrWhiteSpace(texte.Text) ? "Texte vide" : texte.Text;
-                return "Texte : " + (contenu.Length > 25 ? contenu[..25] + "..." : contenu);
+                string contenu = string.IsNullOrWhiteSpace(texte.Text)
+                    ? "Texte vide"
+                    : texte.Text.Replace("\r", " ").Replace("\n", " ").Trim();
+                nom = "Texte : " + (contenu.Length > 25 ? contenu[..25] + "..." : contenu);
+                break;
             case ShapeElement forme:
-                return "Forme : " + forme.ShapeType;
+                nom = "Forme : " + forme.ShapeType;
+                break;
             case ImageElement:
-                return "Image";
+                nom = "Image";
+                break;
+            case TableElement tableau:
+                nom = $"Tableau : {tableau.Rows} x {tableau.Columns}";
+                break;
             default:
-                return "Élément";
+                nom = "Élément";
+                break;
         }
+        return element.IsLocked ? "🔒 " + nom : nom;
     }
 }

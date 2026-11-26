@@ -14,7 +14,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Border Background="#F8F8F8" BorderBrush="#DDDDDD" BorderThickness="0,0,1,0">
+    <Border Background="#F3F5F2" BorderBrush="#DCE4E2" BorderThickness="0,0,1,0">
         <DockPanel Margin="8">
 
             <TextBlock Text="Diapositives"
@@ -30,6 +30,7 @@
             <Button Content="+ Nouvelle diapositive"
                     DockPanel.Dock="Bottom"
                     Margin="2,8,2,2"
+                    Style="{StaticResource BoutonPrincipal}"
                     Command="{Binding NouvelleCommand}"/>
 
             <ListBox x:Name="lstDiapositives"

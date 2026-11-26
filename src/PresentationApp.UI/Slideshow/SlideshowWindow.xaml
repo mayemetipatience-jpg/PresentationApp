@@ -1,0 +1,46 @@
+﻿<Window x:Class="PresentationApp.UI.Slideshow.SlideshowWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:canvas="clr-namespace:PresentationApp.UI.Canvas"
+        Title="Diaporama"
+        WindowStyle="None"
+        WindowState="Maximized"
+        ResizeMode="NoResize"
+        Background="Black"
+        PreviewKeyDown="Window_PreviewKeyDown">
+    <Grid Background="Black">
+        <Viewbox Stretch="Uniform" Margin="18,18,18,78">
+            <Border Width="960" Height="540" Background="White" ClipToBounds="True">
+                <canvas:SlideCanvas x:Name="canvasDiaporama"
+                                    Width="960" Height="540"
+                                    Background="Transparent"
+                                    ClipToBounds="True"/>
+            </Border>
+        </Viewbox>
+
+        <Border VerticalAlignment="Bottom" Height="64"
+                Background="#DD111820" Padding="14,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="◀ Précédente" Padding="14,7" Margin="0,0,8,0"
+                            Click="BtnPrecedente_Click"/>
+                    <Button Content="Suivante ▶" Padding="14,7"
+                            Click="BtnSuivante_Click"/>
+                </StackPanel>
+                <TextBlock x:Name="txtCompteur"
+                           Grid.Column="1"
+                           Foreground="White"
+                           FontSize="14"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Center"/>
+                <Button Grid.Column="2" Content="✕ Quitter"
+                        Padding="14,7" Click="BtnQuitter_Click"/>
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

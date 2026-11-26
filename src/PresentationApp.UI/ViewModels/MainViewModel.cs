@@ -137,6 +137,7 @@ public class MainViewModel : ObservableObject
             Presentation chargee = ProjectFileService.Open(chemin);
 
             CurrentPresentation.Title = chargee.Title;
+            CurrentPresentation.ThemeName = chargee.ThemeName;
             CurrentPresentation.Slides.Clear();
             foreach (Slide slide in chargee.Slides)
                 CurrentPresentation.Slides.Add(slide);

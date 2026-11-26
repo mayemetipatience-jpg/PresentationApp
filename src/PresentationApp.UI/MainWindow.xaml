@@ -10,7 +10,7 @@
         MinWidth="1000"
         WindowStartupLocation="CenterScreen"
         WindowState="Maximized"
-        Background="#F3F3F3">
+        Background="#F3F5F2">
 
     <!-- MainWindow ne fait qu'assembler les panneaux :
            - ToolbarView         : le ruban (en haut)
@@ -20,19 +20,22 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="40"/>
+            <RowDefinition Height="42"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="28"/>
         </Grid.RowDefinitions>
 
         <!-- BARRE DE TITRE -->
-        <Border Grid.Row="0" Background="#B7472A">
+        <Border Grid.Row="0" Background="#123B46">
             <StackPanel Orientation="Horizontal" Margin="12,0">
-                <TextBlock Text="P" Foreground="White" FontSize="22" FontWeight="Bold"
-                           VerticalAlignment="Center" Margin="5,0,15,0"/>
+                <Border Width="30" Height="30" Background="#20B5A5" CornerRadius="7"
+                        VerticalAlignment="Center" Margin="3,0,12,0">
+                    <TextBlock Text="P" Foreground="White" FontSize="20" FontWeight="Bold"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
                 <TextBlock x:Name="txtTitre" Text="Mini PowerPoint | Présentation sans titre"
-                           Foreground="White" FontSize="14" VerticalAlignment="Center"/>
+                           Foreground="White" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
             </StackPanel>
         </Border>
 
@@ -50,12 +53,12 @@
             <views:SlidePanelView x:Name="panneauDiapositives" Grid.Column="0"/>
 
             <!-- Diapositive au centre. En mode « Ajuster », elle prend toute la place disponible. -->
-            <ScrollViewer x:Name="zoneDiapositive" Grid.Column="1" Background="#E8E8E8"
+            <ScrollViewer x:Name="zoneDiapositive" Grid.Column="1" Background="#E9EFEC"
                           HorizontalScrollBarVisibility="Disabled"
                           VerticalScrollBarVisibility="Disabled">
                 <Viewbox x:Name="vueDiapositive" Stretch="Uniform" Margin="25">
                     <Border Background="White" Width="960" Height="540"
-                            BorderBrush="#CCCCCC" BorderThickness="1">
+                            BorderBrush="#CBD8D5" BorderThickness="1">
                         <canvas:SlideCanvas x:Name="slideCanvas"/>
                     </Border>
                 </Viewbox>
@@ -65,17 +68,17 @@
         </Grid>
 
         <!-- BARRE D'ÉTAT -->
-        <Border Grid.Row="3" Background="#F8F8F8" BorderBrush="#DDDDDD" BorderThickness="0,1,0,0">
+        <Border Grid.Row="3" Background="White" BorderBrush="#DCE4E2" BorderThickness="0,1,0,0">
             <DockPanel Margin="12,0" LastChildFill="False">
-                <TextBlock x:Name="txtInfo" DockPanel.Dock="Left" FontSize="11" Foreground="#666666"
+                <TextBlock x:Name="txtInfo" DockPanel.Dock="Left" FontSize="11" Foreground="#668087"
                            VerticalAlignment="Center" Text="Diapositive 1 sur 1"/>
 
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" VerticalAlignment="Center">
-                    <TextBlock Text="Zoom" FontSize="11" VerticalAlignment="Center"/>
+                    <TextBlock Text="Zoom" FontSize="11" Foreground="#45636A" VerticalAlignment="Center"/>
                     <Slider x:Name="sliderZoom" Width="110" Minimum="25" Maximum="200" Value="100"
                             Margin="8,0" VerticalAlignment="Center" IsSnapToTickEnabled="True"
                             TickFrequency="5" ValueChanged="SliderZoom_ValueChanged"/>
-                    <TextBlock x:Name="txtZoom" Text="Ajusté" Width="45" FontSize="11"
+                    <TextBlock x:Name="txtZoom" Text="Ajusté" Width="45" FontSize="11" Foreground="#45636A"
                                VerticalAlignment="Center"/>
                     <Button Content="Ajuster" FontSize="11" Padding="8,1" Margin="4,2"
                             Click="BtnAjuster_Click" ToolTip="Adapter la diapositive à la fenêtre"/>

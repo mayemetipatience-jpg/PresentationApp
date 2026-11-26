@@ -6,6 +6,7 @@ using System.Windows.Input;
 using Microsoft.Win32;
 using PresentationApp.Core.Commands;
 using PresentationApp.Core.Models;
+using PresentationApp.UI.Services;
 using PresentationApp.UI.ViewModels;
 using PresentationApp.UI.Views;
 
@@ -13,8 +14,9 @@ namespace PresentationApp.UI;
 
 // Fenêtre principale : elle assemble les panneaux et fait le lien entre eux.
 //   - les données et l'historique Undo/Redo sont dans MainViewModel (Étudiant 1)
-//   - chaque panneau a son ViewModel (SlideListViewModel, PropertiesViewModel)
+//   - chaque panneau a son ViewModel (SlideListViewModel, PropertiesViewModel, EffetsViewModel)
 //   - le canevas (Étudiant 2) affiche et manipule la diapositive à la souris
+// Les thèmes et le diaporama sont dans MainWindow.Themes.cs et MainWindow.Slideshow.cs.
 public partial class MainWindow : Window
 {
     private const string FiltreFichiers = "Présentation (*.json)|*.json|Tous les fichiers (*.*)|*.*";
@@ -22,6 +24,7 @@ public partial class MainWindow : Window
     private readonly MainViewModel _vm;
     private readonly SlideListViewModel _diapositives;
     private readonly PropertiesViewModel _proprietes;
+    private readonly EffetsViewModel _effets;
 
     private SlideElement? _elementCopie;   // presse-papiers interne
     private bool _modifie;                 // modifications non enregistrées ?
@@ -36,22 +39,35 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Une présentation neuve commence avec une diapositive titre + sous-titre
+        // Une présentation neuve commence avec une diapositive titre + sous-titre, au thème par défaut
         var presentation = new Presentation();
-        presentation.Slides.Add(SlideListViewModel.CreerDiapositive());
+        presentation.Slides.Add(SlideListViewModel.CreerDiapositive(presentation.ThemeName));
 
         _vm = new MainViewModel(presentation);
         _diapositives = new SlideListViewModel(_vm) { Confirmer = Confirmer };
         _proprietes = new PropertiesViewModel(_vm);
+        _effets = new EffetsViewModel(_vm);
 
         // Chaque panneau reçoit son ViewModel
         panneauDiapositives.DataContext = _diapositives;
         panneauProprietes.DataContext = _proprietes;
         ruban.DataContext = _proprietes;
+        ruban.DefinirEffets(_effets);
+        ruban.AfficherTheme(presentation.ThemeName);
 
         // Le ruban signale les actions, la fenêtre les exécute
         ruban.ActionDemandee += Ruban_ActionDemandee;
         ruban.FormeDemandee += AjouterForme;
+        ruban.ThemeDemande += AppliquerTheme;
+
+        // Réglages faits hors historique (animations, transitions, verrouillage)
+        _effets.Modifie += MarquerModifie;
+        _proprietes.VerrouillageModifie += () =>
+        {
+            slideCanvas.ActualiserEtatVerrouillage();
+            _effets.Recharger();
+            MarquerModifie();
+        };
 
         // Canevas -> ViewModel
         slideCanvas.ElementSelectionChangee += element => _vm.SelectedElement = element;
@@ -107,17 +123,19 @@ public partial class MainWindow : Window
         if (element != null && diapositive != null && diapositive.Elements.Contains(element))
             slideCanvas.SelectionnerElementDepuisListe(element);
 
+        ruban.AfficherTheme(_vm.CurrentPresentation.ThemeName);
         MarquerModifie();
         MettreAJourInfo();
     }
 
-    // Modification faite directement à la souris dans le canevas (déplacement, texte...)
+    // Modification faite directement à la souris dans le canevas (déplacement, texte, tableau...)
     private void SlideCanvas_DiapositiveModifiee()
     {
         panneauDiapositives.Rafraichir();
         _proprietes.RechargerCalques();
         _proprietes.Recharger();
         MarquerModifie();
+        MettreAJourInfo();
     }
 
     private void MarquerModifie()
@@ -141,7 +159,7 @@ public partial class MainWindow : Window
     private void MettreAJourInfo()
     {
         int numero = _vm.SelectedSlide != null ? _vm.Slides.IndexOf(_vm.SelectedSlide) + 1 : 0;
-        txtInfo.Text = $"Diapositive {numero} sur {_vm.SlideCount}";
+        txtInfo.Text = $"Diapositive {numero} sur {_vm.SlideCount}   |   Thème : {_vm.CurrentPresentation.ThemeName}";
     }
 
     // =====================================================
@@ -170,11 +188,22 @@ public partial class MainWindow : Window
                     Informer("La présentation doit conserver au moins une diapositive.", "Suppression");
                 break;
 
+            case ActionRuban.SupprimerElement: SupprimerElement(); break;
+
             case ActionRuban.ZoneTexte:
                 if (_vm.SelectedSlide != null)
+                {
                     slideCanvas.ActiverInsertionTexte(_vm.SelectedSlide);
+                    txtInfo.Text = "Cliquez sur la diapositive pour placer la zone de texte.";
+                }
                 break;
             case ActionRuban.Image: InsererImage(); break;
+
+            case ActionRuban.InsererTableau: InsererTableau(); break;
+            case ActionRuban.AjouterLigne: ModifierTableau("Ajouter une ligne", t => t.AjouterLigne()); break;
+            case ActionRuban.SupprimerLigne: ModifierTableau("Supprimer une ligne", t => t.SupprimerLigne()); break;
+            case ActionRuban.AjouterColonne: ModifierTableau("Ajouter une colonne", t => t.AjouterColonne()); break;
+            case ActionRuban.SupprimerColonne: ModifierTableau("Supprimer une colonne", t => t.SupprimerColonne()); break;
 
             case ActionRuban.PremierPlan: ModifierCalque(slideCanvas.MettreAuPremierPlan); break;
             case ActionRuban.ArrierePlan: ModifierCalque(slideCanvas.MettreEnArrierePlan); break;
@@ -182,6 +211,9 @@ public partial class MainWindow : Window
             case ActionRuban.Reculer: ModifierCalque(slideCanvas.ReculerDUnCalque); break;
 
             case ActionRuban.CouleurFond: ChangerCouleurFond(); break;
+
+            case ActionRuban.DiaporamaDebut: DemarrerDiaporama(depuisSelection: false); break;
+            case ActionRuban.DiaporamaSelection: DemarrerDiaporama(depuisSelection: true); break;
         }
     }
 
@@ -224,6 +256,64 @@ public partial class MainWindow : Window
         });
     }
 
+    // ---------- Tableaux ----------
+
+    // Le canevas attend un clic pour placer le tableau (comme pour une zone de texte)
+    private void InsererTableau()
+    {
+        if (_vm.SelectedSlide is not { } diapositive)
+            return;
+
+        slideCanvas.ActiverInsertionTableau(diapositive, ruban.LignesTableau, ruban.ColonnesTableau);
+        txtInfo.Text = $"Cliquez sur la diapositive pour placer le tableau " +
+                       $"({ruban.LignesTableau} x {ruban.ColonnesTableau}).";
+    }
+
+    private sealed record EtatTableau(int Lignes, int Colonnes, List<List<string>> Cellules);
+
+    private static EtatTableau Photographier(TableElement t) =>
+        new(t.Rows, t.Columns, t.Cells.Select(ligne => ligne.ToList()).ToList());
+
+    private static void Restaurer(TableElement t, EtatTableau etat)
+    {
+        t.Rows = etat.Lignes;
+        t.Columns = etat.Colonnes;
+        t.Cells = etat.Cellules.Select(ligne => ligne.ToList()).ToList();
+    }
+
+    // Ajout / suppression de lignes et de colonnes, annulable avec Ctrl+Z
+    private void ModifierTableau(string description, Action<TableElement> modification)
+    {
+        if (_vm.SelectedElement is not TableElement tableau)
+        {
+            Informer("Sélectionnez d'abord un tableau sur la diapositive.", "Tableau");
+            return;
+        }
+        if (tableau.IsLocked)
+        {
+            InformerVerrouille();
+            return;
+        }
+
+        EtatTableau avant = Photographier(tableau);
+        EtatTableau? apres = null;
+
+        _vm.History.Execute(new ActionAnnulable(description,
+            faire: () =>
+            {
+                if (apres == null)
+                {
+                    modification(tableau);
+                    apres = Photographier(tableau);
+                }
+                else
+                {
+                    Restaurer(tableau, apres);       // Refaire
+                }
+            },
+            defaire: () => Restaurer(tableau, avant)));
+    }
+
     // ---------- Presse-papiers ----------
 
     private void Copier()
@@ -241,6 +331,11 @@ public partial class MainWindow : Window
         if (_vm.SelectedElement is not { } element)
         {
             Informer("Sélectionnez un élément à couper.", "Couper");
+            return;
+        }
+        if (element.IsLocked)
+        {
+            InformerVerrouille();
             return;
         }
         _elementCopie = ClonerElement(element);
@@ -262,6 +357,7 @@ public partial class MainWindow : Window
         AjouterElement(copie);
     }
 
+    // Copie indépendante : style, animation et cellules ne sont pas partagés avec l'original
     private static SlideElement ClonerElement(SlideElement element)
     {
         SlideElement copie = element switch
@@ -269,6 +365,17 @@ public partial class MainWindow : Window
             TextElement texte => new TextElement { Text = texte.Text },
             ShapeElement forme => new ShapeElement { ShapeType = forme.ShapeType },
             ImageElement image => new ImageElement { ImagePath = image.ImagePath },
+            TableElement tableau => new TableElement
+            {
+                Rows = tableau.Rows,
+                Columns = tableau.Columns,
+                Cells = tableau.Cells.Select(ligne => ligne.ToList()).ToList(),
+                CellBackgroundColor = tableau.CellBackgroundColor,
+                HeaderBackgroundColor = tableau.HeaderBackgroundColor,
+                BorderColor = tableau.BorderColor,
+                BorderThickness = tableau.BorderThickness,
+                CellFontSize = tableau.CellFontSize
+            },
             _ => throw new NotSupportedException("Type d'élément non pris en charge.")
         };
 
@@ -278,10 +385,19 @@ public partial class MainWindow : Window
         copie.Height = element.Height;
         copie.Rotation = element.Rotation;
         copie.Style = ChangeStyleCommand.Copy(element.Style);
+        copie.IsLocked = false;
+        copie.Animation = new ElementAnimation
+        {
+            Type = element.Animation?.Type ?? AnimationType.None,
+            DurationMs = element.Animation?.DurationMs ?? 1000,
+            Direction = element.Animation?.Direction ?? "Left",
+            DelayMs = element.Animation?.DelayMs ?? 0,
+            RepeatCount = element.Animation?.RepeatCount ?? 1
+        };
         return copie;
     }
 
-    // ---------- Calques et fond (gérés par le canevas) ----------
+    // ---------- Calques et fond ----------
 
     private void ModifierCalque(Action action)
     {
@@ -294,23 +410,31 @@ public partial class MainWindow : Window
         SlideCanvas_DiapositiveModifiee();
     }
 
+    // Change la couleur de fond (annulable avec Ctrl+Z)
     private void ChangerCouleurFond()
     {
         if (_vm.SelectedSlide is not { } diapositive)
             return;
 
         _indexCouleurFond = (_indexCouleurFond + 1) % _couleursFond.Length;
-        diapositive.BackgroundColor = _couleursFond[_indexCouleurFond];
+        string ancienne = diapositive.BackgroundColor;
+        string nouvelle = _couleursFond[_indexCouleurFond];
 
-        slideCanvas.DisplaySlide(diapositive);
-        SlideCanvas_DiapositiveModifiee();
+        _vm.History.Execute(new ActionAnnulable("Couleur de fond",
+            faire: () => diapositive.BackgroundColor = nouvelle,
+            defaire: () => diapositive.BackgroundColor = ancienne));
     }
 
     private void SupprimerElement()
     {
-        if (_vm.SelectedElement == null)
+        if (_vm.SelectedElement is not { } element)
         {
             Informer("Sélectionnez d'abord un élément à supprimer.", "Suppression");
+            return;
+        }
+        if (element.IsLocked)
+        {
+            InformerVerrouille();
             return;
         }
         _vm.DeleteElementCommand.Execute(null);
@@ -352,8 +476,10 @@ public partial class MainWindow : Window
             return;
         }
 
+        ruban.AfficherTheme(_vm.CurrentPresentation.ThemeName);
         _modifie = false;
         MettreAJourTitre();
+        MettreAJourInfo();
     }
 
     // Renvoie false si l'utilisateur a annulé ou si l'enregistrement a échoué
@@ -422,6 +548,14 @@ public partial class MainWindow : Window
     {
         bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
         bool maj = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
+
+        // Diaporama : F5 depuis le début, Maj+F5 depuis la diapositive actuelle
+        if (e.Key == Key.F5)
+        {
+            DemarrerDiaporama(depuisSelection: maj);
+            e.Handled = true;
+            return;
+        }
 
         // Raccourcis valables partout, même pendant la saisie d'un texte
         if (ctrl)
@@ -503,6 +637,9 @@ public partial class MainWindow : Window
 
     private void Informer(string message, string titre)
         => MessageBox.Show(this, message, titre, MessageBoxButton.OK, MessageBoxImage.Information);
+
+    private void InformerVerrouille()
+        => Informer("Cet élément est verrouillé. Déverrouillez-le pour le modifier.", "Élément verrouillé");
 
     private void Erreur(string message)
         => MessageBox.Show(this, message, "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);

@@ -30,19 +30,26 @@
         </ResourceDictionary>
     </UserControl.Resources>
 
-    <Border Background="#FAFAFA" BorderBrush="#DDDDDD" BorderThickness="1,0,0,0">
+    <Border Background="#F7F9F7" BorderBrush="#DCE4E2" BorderThickness="1,0,0,0">
         <ScrollViewer VerticalScrollBarVisibility="Auto">
             <StackPanel Margin="12">
 
                 <TextBlock Text="Format de l'élément" FontSize="14" FontWeight="SemiBold"/>
-                <TextBlock Text="{Binding Titre}" Foreground="#B7472A" Margin="0,2,0,4"/>
+                <TextBlock Text="{Binding Titre}" Foreground="#20B5A5" FontWeight="SemiBold" Margin="0,2,0,4"/>
 
                 <TextBlock Text="Cliquez sur un élément de la diapositive pour modifier ses propriétés."
                            Visibility="{Binding AucunElement, Converter={StaticResource VraiVersVisible}}"
                            TextWrapping="Wrap" FontSize="11" Foreground="#888888" Margin="0,6"/>
 
-                <!-- ===== POSITION, TAILLE, ROTATION (tous les éléments) ===== -->
-                <StackPanel Visibility="{Binding AElement, Converter={StaticResource VraiVersVisible}}">
+                <!-- ===== VERROUILLAGE ===== -->
+                <Button Content="{Binding TexteVerrouillage}" Command="{Binding VerrouillerCommand}"
+                        Visibility="{Binding AElement, Converter={StaticResource VraiVersVisible}}"
+                        HorizontalAlignment="Left" Margin="0,4,0,0"
+                        ToolTip="Un élément verrouillé ne peut plus être déplacé ni modifié"/>
+
+                <!-- ===== POSITION, TAILLE, ROTATION (tous les éléments, grisés si verrouillé) ===== -->
+                <StackPanel Visibility="{Binding AElement, Converter={StaticResource VraiVersVisible}}"
+                            IsEnabled="{Binding Modifiable}">
 
                     <TextBlock Text="Position et taille" Style="{StaticResource TitreSection}"/>
                     <Grid>
