@@ -13,10 +13,7 @@
 
 	<Window.Resources>
 
-		<!-- ====================================== -->
-		<!-- PALETTE OCEAN PREMIUM                  -->
-		<!-- ====================================== -->
-
+		<!-- PALETTE -->
 		<SolidColorBrush x:Key="OceanPrimary" Color="#123B46"/>
 		<SolidColorBrush x:Key="OceanAccent" Color="#20B5A5"/>
 		<SolidColorBrush x:Key="OceanLight" Color="#E5F4F1"/>
@@ -27,7 +24,6 @@
 		<SolidColorBrush x:Key="OceanCopper" Color="#E8A46B"/>
 
 		<!-- STYLE GENERAL DES BOUTONS -->
-
 		<Style TargetType="{x:Type Button}">
 			<Setter Property="Background" Value="#FFFFFF"/>
 			<Setter Property="Foreground" Value="#123B46"/>
@@ -38,27 +34,21 @@
 			<Setter Property="Cursor" Value="Hand"/>
 			<Setter Property="MinHeight" Value="30"/>
 			<Setter Property="FontSize" Value="12"/>
-
 			<Style.Triggers>
-
 				<Trigger Property="IsMouseOver" Value="True">
 					<Setter Property="Background" Value="#E5F4F1"/>
 					<Setter Property="BorderBrush" Value="#20B5A5"/>
 				</Trigger>
-
 				<Trigger Property="IsPressed" Value="True">
 					<Setter Property="Background" Value="#CDEAE4"/>
 				</Trigger>
-
 				<Trigger Property="IsEnabled" Value="False">
 					<Setter Property="Opacity" Value="0.5"/>
 				</Trigger>
-
 			</Style.Triggers>
 		</Style>
 
-		<!-- STYLE DES TITRES DE GROUPES -->
-
+		<!-- TITRES DES GROUPES -->
 		<Style x:Key="GroupTitle" TargetType="{x:Type TextBlock}">
 			<Setter Property="FontSize" Value="11"/>
 			<Setter Property="Foreground" Value="#668087"/>
@@ -66,8 +56,7 @@
 			<Setter Property="Margin" Value="2,6,2,2"/>
 		</Style>
 
-		<!-- STYLE DES GROUPES DU RUBAN -->
-
+		<!-- GROUPES DU RUBAN -->
 		<Style x:Key="RibbonGroup" TargetType="{x:Type GroupBox}">
 			<Setter Property="Margin" Value="5,3"/>
 			<Setter Property="Padding" Value="8,5"/>
@@ -78,8 +67,7 @@
 			<Setter Property="FontSize" Value="11"/>
 		</Style>
 
-		<!-- STYLE DES ONGLETS -->
-
+		<!-- ONGLETS -->
 		<Style TargetType="{x:Type TabItem}">
 			<Setter Property="Foreground" Value="#45636A"/>
 			<Setter Property="Background" Value="#FFFFFF"/>
@@ -87,28 +75,20 @@
 			<Setter Property="Margin" Value="2,0"/>
 			<Setter Property="FontSize" Value="13"/>
 			<Setter Property="BorderThickness" Value="0"/>
-
 			<Style.Triggers>
-
 				<Trigger Property="IsSelected" Value="True">
 					<Setter Property="Foreground" Value="#123B46"/>
 					<Setter Property="Background" Value="#E5F4F1"/>
 					<Setter Property="FontWeight" Value="Bold"/>
 				</Trigger>
-
 				<Trigger Property="IsMouseOver" Value="True">
 					<Setter Property="Foreground" Value="#20B5A5"/>
 				</Trigger>
-
 			</Style.Triggers>
 		</Style>
 
-		<!-- ====================================== -->
-		<!-- MINIATURE : TEXTE                      -->
-		<!-- ====================================== -->
-
+		<!-- MINIATURE : TEXTE -->
 		<DataTemplate DataType="{x:Type models:TextElement}">
-
 			<TextBlock Text="{Binding Text}"
                        Width="{Binding Width}"
                        Height="{Binding Height}"
@@ -119,161 +99,151 @@
                        TextAlignment="{Binding Style.TextAlignment, FallbackValue=Left}"
                        ClipToBounds="True"
                        RenderTransformOrigin="0.5,0.5">
-
 				<TextBlock.RenderTransform>
 					<RotateTransform Angle="{Binding Rotation}"/>
 				</TextBlock.RenderTransform>
-
 				<TextBlock.Style>
 					<Style TargetType="{x:Type TextBlock}">
-
 						<Setter Property="FontWeight" Value="Normal"/>
 						<Setter Property="FontStyle" Value="Normal"/>
 						<Setter Property="TextDecorations" Value="{x:Null}"/>
-
 						<Style.Triggers>
-
 							<DataTrigger Binding="{Binding Style.IsBold}" Value="True">
 								<Setter Property="FontWeight" Value="Bold"/>
 							</DataTrigger>
-
 							<DataTrigger Binding="{Binding Style.IsItalic}" Value="True">
 								<Setter Property="FontStyle" Value="Italic"/>
 							</DataTrigger>
-
 							<DataTrigger Binding="{Binding Style.IsUnderline}" Value="True">
 								<Setter Property="TextDecorations" Value="Underline"/>
 							</DataTrigger>
-
 						</Style.Triggers>
-
 					</Style>
 				</TextBlock.Style>
-
 			</TextBlock>
-
 		</DataTemplate>
 
-		<!-- ====================================== -->
-		<!-- MINIATURE : FORMES                     -->
-		<!-- ====================================== -->
-
+		<!-- MINIATURE : FORMES -->
 		<DataTemplate DataType="{x:Type models:ShapeElement}">
-
-			<Grid Width="{Binding Width}"
-                  Height="{Binding Height}">
-
+			<Grid Width="{Binding Width}" Height="{Binding Height}">
 				<Rectangle x:Name="MiniRectangle"
                            Fill="{Binding Style.FillColor}"
                            Stroke="{Binding Style.StrokeColor}"
                            StrokeThickness="{Binding Style.StrokeThickness}"
                            Visibility="Visible"/>
-
 				<Ellipse x:Name="MiniEllipse"
                          Fill="{Binding Style.FillColor}"
                          Stroke="{Binding Style.StrokeColor}"
                          StrokeThickness="{Binding Style.StrokeThickness}"
                          Visibility="Collapsed"/>
-
 				<Line x:Name="MiniLine"
-                      X1="0"
-                      Y1="0"
+                      X1="0" Y1="0"
                       X2="{Binding Width}"
                       Y2="{Binding Height}"
                       Stroke="{Binding Style.StrokeColor}"
                       StrokeThickness="{Binding Style.StrokeThickness}"
                       Visibility="Collapsed"/>
-
 				<Line x:Name="MiniArrow"
-                      X1="0"
-                      Y1="0"
+                      X1="0" Y1="0"
                       X2="{Binding Width}"
                       Y2="{Binding Height}"
                       Stroke="{Binding Style.StrokeColor}"
                       StrokeThickness="{Binding Style.StrokeThickness}"
                       Visibility="Collapsed"/>
-
 			</Grid>
-
 			<DataTemplate.Triggers>
-
 				<DataTrigger Binding="{Binding ShapeType}"
                              Value="{x:Static models:ShapeType.Ellipse}">
-
-					<Setter TargetName="MiniRectangle"
-                            Property="Visibility"
-                            Value="Collapsed"/>
-
-					<Setter TargetName="MiniEllipse"
-                            Property="Visibility"
-                            Value="Visible"/>
-
+					<Setter TargetName="MiniRectangle" Property="Visibility" Value="Collapsed"/>
+					<Setter TargetName="MiniEllipse" Property="Visibility" Value="Visible"/>
 				</DataTrigger>
-
 				<DataTrigger Binding="{Binding ShapeType}"
                              Value="{x:Static models:ShapeType.Line}">
-
-					<Setter TargetName="MiniRectangle"
-                            Property="Visibility"
-                            Value="Collapsed"/>
-
-					<Setter TargetName="MiniLine"
-                            Property="Visibility"
-                            Value="Visible"/>
-
+					<Setter TargetName="MiniRectangle" Property="Visibility" Value="Collapsed"/>
+					<Setter TargetName="MiniLine" Property="Visibility" Value="Visible"/>
 				</DataTrigger>
-
 				<DataTrigger Binding="{Binding ShapeType}"
                              Value="{x:Static models:ShapeType.Arrow}">
-
-					<Setter TargetName="MiniRectangle"
-                            Property="Visibility"
-                            Value="Collapsed"/>
-
-					<Setter TargetName="MiniArrow"
-                            Property="Visibility"
-                            Value="Visible"/>
-
+					<Setter TargetName="MiniRectangle" Property="Visibility" Value="Collapsed"/>
+					<Setter TargetName="MiniArrow" Property="Visibility" Value="Visible"/>
 				</DataTrigger>
-
 			</DataTemplate.Triggers>
-
 		</DataTemplate>
 
-		<!-- ====================================== -->
-		<!-- MINIATURE : IMAGE                      -->
-		<!-- ====================================== -->
-
+		<!-- MINIATURE : IMAGE -->
 		<DataTemplate DataType="{x:Type models:ImageElement}">
-
 			<Border Width="{Binding Width}"
                     Height="{Binding Height}"
                     Background="#E5E5E5"
                     BorderBrush="#999999"
                     BorderThickness="1"
                     RenderTransformOrigin="0.5,0.5">
+				<Border.RenderTransform>
+					<RotateTransform Angle="{Binding Rotation}"/>
+				</Border.RenderTransform>
+				<TextBlock Text="Image"
+                           HorizontalAlignment="Center"
+                           VerticalAlignment="Center"
+                           Foreground="#555555"/>
+			</Border>
+		</DataTemplate>
+
+		<!-- MINIATURE : TABLEAU -->
+		<DataTemplate DataType="{x:Type models:TableElement}">
+			<Border Width="{Binding Width}"
+                    Height="{Binding Height}"
+                    Background="White"
+                    BorderBrush="#555555"
+                    BorderThickness="1"
+                    ClipToBounds="True"
+                    RenderTransformOrigin="0.5,0.5">
 
 				<Border.RenderTransform>
 					<RotateTransform Angle="{Binding Rotation}"/>
 				</Border.RenderTransform>
 
-				<TextBlock Text="Image"
-                           HorizontalAlignment="Center"
-                           VerticalAlignment="Center"
-                           Foreground="#555555"/>
+				<ItemsControl ItemsSource="{Binding Cells}">
+					<ItemsControl.ItemsPanel>
+						<ItemsPanelTemplate>
+							<StackPanel Orientation="Vertical"/>
+						</ItemsPanelTemplate>
+					</ItemsControl.ItemsPanel>
 
+					<ItemsControl.ItemTemplate>
+						<DataTemplate>
+							<ItemsControl ItemsSource="{Binding}">
+								<ItemsControl.ItemsPanel>
+									<ItemsPanelTemplate>
+										<UniformGrid Rows="1"/>
+									</ItemsPanelTemplate>
+								</ItemsControl.ItemsPanel>
+
+								<ItemsControl.ItemTemplate>
+									<DataTemplate>
+										<Border BorderBrush="#777777"
+                                                BorderThickness="0.5"
+                                                Padding="2"
+                                                Background="White">
+											<TextBlock Text="{Binding}"
+                                                       FontSize="8"
+                                                       Foreground="Black"
+                                                       TextWrapping="Wrap"
+                                                       TextAlignment="Center"
+                                                       VerticalAlignment="Center"/>
+										</Border>
+									</DataTemplate>
+								</ItemsControl.ItemTemplate>
+							</ItemsControl>
+						</DataTemplate>
+					</ItemsControl.ItemTemplate>
+				</ItemsControl>
 			</Border>
-
 		</DataTemplate>
 
 	</Window.Resources>
 
-	<!-- ========================================== -->
-	<!-- GRILLE PRINCIPALE                          -->
-	<!-- ========================================== -->
-
+	<!-- GRILLE PRINCIPALE -->
 	<Grid>
-
 		<Grid.RowDefinitions>
 			<RowDefinition Height="42"/>
 			<RowDefinition Height="38"/>
@@ -282,40 +252,27 @@
 			<RowDefinition Height="28"/>
 		</Grid.RowDefinitions>
 
-		<!-- ====================================== -->
-		<!-- BARRE SUPERIEURE                      -->
-		<!-- ====================================== -->
-
-		<Border Grid.Row="0"
-                Background="#123B46">
-
+		<!-- BARRE SUPERIEURE -->
+		<Border Grid.Row="0" Background="#123B46">
 			<Grid Margin="12,0">
-
 				<Grid.ColumnDefinitions>
 					<ColumnDefinition Width="Auto"/>
 					<ColumnDefinition Width="*"/>
 					<ColumnDefinition Width="Auto"/>
 				</Grid.ColumnDefinitions>
 
-				<!-- LOGO -->
-
-				<Border Width="30"
-                        Height="30"
+				<Border Width="30" Height="30"
                         Background="#20B5A5"
                         CornerRadius="7"
                         VerticalAlignment="Center"
                         Margin="3,0,12,0">
-
 					<TextBlock Text="P"
                                Foreground="White"
                                FontSize="20"
                                FontWeight="Bold"
                                HorizontalAlignment="Center"
                                VerticalAlignment="Center"/>
-
 				</Border>
-
-				<!-- TITRE -->
 
 				<TextBlock Grid.Column="1"
                            Text="Mini PowerPoint | Présentation sans titre"
@@ -324,122 +281,77 @@
                            FontWeight="SemiBold"
                            VerticalAlignment="Center"/>
 
-				<!-- PARTAGE -->
-
 				<Button Grid.Column="2"
                         Content="Partager"
                         Background="#20B5A5"
                         Foreground="White"
                         BorderThickness="0"
                         FontWeight="SemiBold"/>
-
 			</Grid>
-
 		</Border>
 
-		<!-- ====================================== -->
-		<!-- RUBAN ET ONGLETS                       -->
-		<!-- ====================================== -->
-
+		<!-- RUBAN ET ONGLETS -->
 		<TabControl Grid.Row="1"
                     Grid.RowSpan="2"
                     Background="#FFFFFF"
                     BorderThickness="0"
                     Padding="0">
 
-			<!-- ================================== -->
-			<!-- FICHIER                            -->
-			<!-- ================================== -->
-
+			<!-- FICHIER -->
 			<TabItem Header="Fichier">
-
 				<ScrollViewer VerticalScrollBarVisibility="Auto">
-
 					<StackPanel Margin="20">
-
 						<TextBlock Text="Gestion de la présentation"
                                    FontSize="16"
                                    FontWeight="SemiBold"
                                    Foreground="#123B46"
                                    Margin="5,5,5,15"/>
-
 						<WrapPanel>
-
 							<Button Content="Ouvrir"
                                     Width="120"
                                     Height="45"
                                     Click="BoutonFichier_Click"/>
-
 							<TextBlock Text="Accéder aux opérations sur les fichiers."
                                        VerticalAlignment="Center"
                                        Foreground="#668087"
                                        Margin="15,5"/>
-
 						</WrapPanel>
-
 					</StackPanel>
-
 				</ScrollViewer>
-
 			</TabItem>
 
-			<!-- ================================== -->
-			<!-- ACCUEIL                            -->
-			<!-- ================================== -->
-
-			<TabItem Header="Accueil"
-                     IsSelected="True">
-
+			<!-- ACCUEIL -->
+			<TabItem Header="Accueil" IsSelected="True">
 				<ScrollViewer HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled"
                               VerticalContentAlignment="Center">
-
-					<StackPanel Orientation="Horizontal"
-                                Margin="5,5">
-
-						<!-- PRESSE-PAPIERS -->
+					<StackPanel Orientation="Horizontal" Margin="5,5">
 
 						<GroupBox Header="Presse-papiers"
                                   Style="{StaticResource RibbonGroup}"
                                   Width="190">
-
 							<Grid>
-
 								<Grid.ColumnDefinitions>
 									<ColumnDefinition Width="*"/>
 									<ColumnDefinition Width="*"/>
 								</Grid.ColumnDefinitions>
-
 								<Button Grid.Column="0"
                                         Content="Coller"
                                         Height="65"
                                         Click="BtnColler_Click"/>
-
 								<StackPanel Grid.Column="1">
-
-									<Button Content="Couper"
-                                            Click="BtnCouper_Click"/>
-
-									<Button Content="Copier"
-                                            Click="BtnCopier_Click"/>
-
+									<Button Content="Couper" Click="BtnCouper_Click"/>
+									<Button Content="Copier" Click="BtnCopier_Click"/>
 								</StackPanel>
-
 							</Grid>
-
 						</GroupBox>
-
-						<!-- MISE EN FORME DU TEXTE -->
 
 						<GroupBox Header="Mise en forme du texte"
                                   Style="{StaticResource RibbonGroup}"
                                   Width="450">
-
 							<StackPanel>
-
 								<StackPanel Orientation="Horizontal"
                                             HorizontalAlignment="Center">
-
 									<ComboBox x:Name="cmbPolice"
                                               Width="145"
                                               Height="30"
@@ -447,7 +359,6 @@
                                               SelectedIndex="0"
                                               SelectionChanged="CmbPolice_SelectionChanged"
                                               ToolTip="Choisir la police">
-
 										<ComboBoxItem Content="Segoe UI"/>
 										<ComboBoxItem Content="Arial"/>
 										<ComboBoxItem Content="Calibri"/>
@@ -455,7 +366,6 @@
 										<ComboBoxItem Content="Verdana"/>
 										<ComboBoxItem Content="Georgia"/>
 										<ComboBoxItem Content="Comic Sans MS"/>
-
 									</ComboBox>
 
 									<ComboBox x:Name="cmbTaille"
@@ -465,7 +375,6 @@
                                               SelectedIndex="3"
                                               SelectionChanged="CmbTaille_SelectionChanged"
                                               ToolTip="Taille du texte">
-
 										<ComboBoxItem Content="8"/>
 										<ComboBoxItem Content="10"/>
 										<ComboBoxItem Content="12"/>
@@ -478,7 +387,6 @@
 										<ComboBoxItem Content="48"/>
 										<ComboBoxItem Content="60"/>
 										<ComboBoxItem Content="72"/>
-
 									</ComboBox>
 
 									<ComboBox x:Name="cmbCouleurTexte"
@@ -488,7 +396,6 @@
                                               SelectedIndex="0"
                                               SelectionChanged="CmbCouleurTexte_SelectionChanged"
                                               ToolTip="Couleur du texte">
-
 										<ComboBoxItem Content="Noir" Tag="#000000"/>
 										<ComboBoxItem Content="Blanc" Tag="#FFFFFF"/>
 										<ComboBoxItem Content="Rouge" Tag="#FF0000"/>
@@ -505,172 +412,103 @@
 										<ComboBoxItem Content="Or" Tag="#FFD700"/>
 										<ComboBoxItem Content="Vert clair" Tag="#90EE90"/>
 										<ComboBoxItem Content="Rose vif" Tag="#FF69B4"/>
-
 									</ComboBox>
-
 								</StackPanel>
 
 								<WrapPanel HorizontalAlignment="Center">
-
 									<Button Content="G"
                                             FontWeight="Bold"
                                             Width="38"
                                             Click="BtnGras_Click"
                                             ToolTip="Mettre en gras"/>
-
 									<Button Content="I"
                                             FontStyle="Italic"
                                             Width="38"
                                             Click="BtnItalique_Click"
                                             ToolTip="Mettre en italique"/>
-
 									<Button Width="38"
                                             Click="BtnSouligne_Click"
                                             ToolTip="Souligner">
-
-										<TextBlock Text="S"
-                                                   TextDecorations="Underline"/>
-
+										<TextBlock Text="S" TextDecorations="Underline"/>
 									</Button>
-
-									<Button Content="≡"
-                                            FontSize="18"
-                                            Width="38"
+									<Button Content="≡" FontSize="18" Width="38"
                                             Click="BtnAlignerGauche_Click"
                                             ToolTip="Aligner à gauche"/>
-
-									<Button Content="☰"
-                                            FontSize="18"
-                                            Width="38"
+									<Button Content="☰" FontSize="18" Width="38"
                                             Click="BtnCentrerTexte_Click"
                                             ToolTip="Centrer le texte"/>
-
-									<Button Content="≡"
-                                            FontSize="18"
-                                            Width="38"
+									<Button Content="≡" FontSize="18" Width="38"
                                             Click="BtnAlignerDroite_Click"
                                             ToolTip="Aligner à droite"/>
-
 								</WrapPanel>
-
 							</StackPanel>
-
 						</GroupBox>
-
-						<!-- DIAPOSITIVES -->
 
 						<GroupBox Header="Diapositives"
                                   Style="{StaticResource RibbonGroup}"
                                   Width="180">
-
 							<StackPanel>
-
 								<Button Content="Ajouter une diapositive"
                                         Height="38"
                                         Click="BtnNouvelleDiapositive_Click"/>
-
 								<Button Content="Supprimer la diapositive"
                                         Height="38"
                                         Click="BtnSupprimerDiapositive_Click"/>
-
 							</StackPanel>
-
 						</GroupBox>
-
-						<!-- MODIFICATION -->
 
 						<GroupBox Header="Modification"
                                   Style="{StaticResource RibbonGroup}"
                                   Width="225">
-
 							<WrapPanel HorizontalAlignment="Center">
-
-								<Button Content="Rotation"
-                                        Click="BtnRotation_Click"/>
-
-								<Button Content="Supprimer"
-                                        Click="BtnSupprimerElement_Click"/>
-
-								<Button Content="Remplissage"
-                                        Click="BtnCouleurRemplissage_Click"/>
-
+								<Button Content="Rotation" Click="BtnRotation_Click"/>
+								<Button Content="Supprimer" Click="BtnSupprimerElement_Click"/>
+								<Button Content="Remplissage" Click="BtnCouleurRemplissage_Click"/>
 								<Button Content="Verrouiller / Déverrouiller"
                                         FontSize="11"
                                         Click="BtnVerrouiller_Click"/>
-
 							</WrapPanel>
-
 						</GroupBox>
-
-						<!-- CALQUES -->
 
 						<GroupBox Header="Ordre des calques"
                                   Style="{StaticResource RibbonGroup}"
                                   Width="250">
-
 							<WrapPanel HorizontalAlignment="Center">
-
-								<Button Content="Premier plan"
-                                        Click="BtnPremierPlan_Click"/>
-
-								<Button Content="Arrière-plan"
-                                        Click="BtnArrierePlanCalque_Click"/>
-
-								<Button Content="Avancer"
-                                        Click="BtnAvancerCalque_Click"/>
-
-								<Button Content="Reculer"
-                                        Click="BtnReculerCalque_Click"/>
-
+								<Button Content="Premier plan" Click="BtnPremierPlan_Click"/>
+								<Button Content="Arrière-plan" Click="BtnArrierePlanCalque_Click"/>
+								<Button Content="Avancer" Click="BtnAvancerCalque_Click"/>
+								<Button Content="Reculer" Click="BtnReculerCalque_Click"/>
 							</WrapPanel>
-
 						</GroupBox>
 
 					</StackPanel>
-
 				</ScrollViewer>
-
 			</TabItem>
 
-			<!-- ================================== -->
-			<!-- INSERTION                          -->
-			<!-- ================================== -->
-
+			<!-- INSERTION -->
 			<TabItem Header="Insertion">
-
 				<ScrollViewer HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled"
                               VerticalContentAlignment="Center">
-
-					<StackPanel Orientation="Horizontal"
-                                Margin="5,5">
-
-						<!-- TEXTE -->
+					<StackPanel Orientation="Horizontal" Margin="5,5">
 
 						<GroupBox Header="Texte"
                                   Style="{StaticResource RibbonGroup}"
                                   Width="150">
-
 							<Button Content="Zone de texte"
                                     Height="55"
                                     Background="#E5F4F1"
                                     FontWeight="SemiBold"
                                     Click="BtnTexte_Click"/>
-
 						</GroupBox>
-
-						<!-- FORMES -->
 
 						<GroupBox Header="Formes"
                                   Style="{StaticResource RibbonGroup}"
                                   Width="240">
-
 							<StackPanel>
-
 								<TextBlock Text="Choisir une forme"
                                            Foreground="#668087"
                                            Margin="3,2"/>
-
 								<ComboBox x:Name="cmbFormes"
                                           Width="210"
                                           Height="35"
@@ -679,7 +517,6 @@
                                           SelectedIndex="-1"
                                           SelectionChanged="CmbFormes_SelectionChanged"
                                           ToolTip="Choisir une forme">
-
 									<ComboBoxItem Content="Rectangle" Tag="Rectangle"/>
 									<ComboBoxItem Content="Rectangle arrondi" Tag="RoundedRectangle"/>
 									<ComboBoxItem Content="Ellipse" Tag="Ellipse"/>
@@ -700,43 +537,30 @@
 									<ComboBoxItem Content="Flèche vers le bas" Tag="ArrowDown"/>
 									<ComboBoxItem Content="Flèche double" Tag="DoubleArrow"/>
 									<ComboBoxItem Content="Ligne diagonale" Tag="Line"/>
-
 								</ComboBox>
-
 								<TextBlock Text="20 formes disponibles"
                                            Style="{StaticResource GroupTitle}"/>
-
 							</StackPanel>
-
 						</GroupBox>
-
-						<!-- TABLEAUX -->
 
 						<GroupBox Header="Tableaux"
                                   Style="{StaticResource RibbonGroup}"
                                   Width="270">
-
 							<StackPanel>
-
 								<Grid>
-
 									<Grid.ColumnDefinitions>
 										<ColumnDefinition Width="*"/>
 										<ColumnDefinition Width="*"/>
 									</Grid.ColumnDefinitions>
 
-									<StackPanel Grid.Column="0"
-                                                Margin="4">
-
+									<StackPanel Grid.Column="0" Margin="4">
 										<TextBlock Text="Nombre de lignes"
                                                    Foreground="#668087"
                                                    Margin="2,2,2,5"/>
-
 										<ComboBox x:Name="cmbLignesTableau"
                                                   Height="32"
                                                   SelectedIndex="2"
                                                   ToolTip="Choisir le nombre de lignes">
-
 											<ComboBoxItem Content="1"/>
 											<ComboBoxItem Content="2"/>
 											<ComboBoxItem Content="3"/>
@@ -757,23 +581,17 @@
 											<ComboBoxItem Content="18"/>
 											<ComboBoxItem Content="19"/>
 											<ComboBoxItem Content="20"/>
-
 										</ComboBox>
-
 									</StackPanel>
 
-									<StackPanel Grid.Column="1"
-                                                Margin="4">
-
+									<StackPanel Grid.Column="1" Margin="4">
 										<TextBlock Text="Nombre de colonnes"
                                                    Foreground="#668087"
                                                    Margin="2,2,2,5"/>
-
 										<ComboBox x:Name="cmbColonnesTableau"
                                                   Height="32"
                                                   SelectedIndex="2"
                                                   ToolTip="Choisir le nombre de colonnes">
-
 											<ComboBoxItem Content="1"/>
 											<ComboBoxItem Content="2"/>
 											<ComboBoxItem Content="3"/>
@@ -794,11 +612,8 @@
 											<ComboBoxItem Content="18"/>
 											<ComboBoxItem Content="19"/>
 											<ComboBoxItem Content="20"/>
-
 										</ComboBox>
-
 									</StackPanel>
-
 								</Grid>
 
 								<Button Content="Insérer un tableau"
@@ -809,54 +624,34 @@
                                         FontWeight="SemiBold"
                                         BorderThickness="0"
                                         Click="BtnInsererTableau_Click"/>
-
 							</StackPanel>
-
 						</GroupBox>
-
-						<!-- IMAGES -->
 
 						<GroupBox Header="Images"
                                   Style="{StaticResource RibbonGroup}"
                                   Width="150">
-
 							<Button Content="Insérer une image"
                                     Height="55"
                                     Click="BtnImage_Click"/>
-
 						</GroupBox>
 
 					</StackPanel>
-
 				</ScrollViewer>
-
 			</TabItem>
 
-			<!-- ================================== -->
-			<!-- CREATION                           -->
-			<!-- ================================== -->
-
+			<!-- CREATION -->
 			<TabItem Header="Création">
-
 				<ScrollViewer HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Disabled"
                               VerticalContentAlignment="Center">
-
-					<StackPanel Orientation="Horizontal"
-                                Margin="5,5">
-
-						<!-- THEMES -->
-
+					<StackPanel Orientation="Horizontal" Margin="5,5">
 						<GroupBox Header="Thèmes de présentation"
                                   Style="{StaticResource RibbonGroup}"
                                   Width="300">
-
 							<StackPanel>
-
 								<TextBlock Text="Choisir un thème"
                                            Foreground="#668087"
                                            Margin="3,2,3,5"/>
-
 								<ComboBox x:Name="cmbThemes"
                                           Width="250"
                                           Height="38"
@@ -864,148 +659,97 @@
                                           SelectedIndex="-1"
                                           SelectionChanged="CmbThemes_SelectionChanged"
                                           ToolTip="Appliquer un thème à la présentation">
-
 									<ComboBoxItem Content="Moderne bleu"/>
 									<ComboBoxItem Content="Élégant violet"/>
 									<ComboBoxItem Content="Sombre"/>
 									<ComboBoxItem Content="Minimaliste"/>
 									<ComboBoxItem Content="Nature"/>
-
 								</ComboBox>
-
 							</StackPanel>
-
 						</GroupBox>
-
-						<!-- ARRIERE-PLAN -->
 
 						<GroupBox Header="Arrière-plan"
                                   Style="{StaticResource RibbonGroup}"
                                   Width="190">
-
 							<Button Content="Modifier l'arrière-plan"
                                     Height="55"
                                     Click="BtnArrierePlan_Click"/>
-
 						</GroupBox>
-
 					</StackPanel>
-
 				</ScrollViewer>
-
 			</TabItem>
 
-			<!-- ================================== -->
-			<!-- TRANSITIONS                        -->
-			<!-- ================================== -->
-
+			<!-- TRANSITIONS -->
 			<TabItem Header="Transitions">
-
 				<StackPanel Margin="20">
-
 					<TextBlock Text="Transitions entre les diapositives"
                                FontSize="16"
                                FontWeight="SemiBold"
                                Foreground="#123B46"
                                Margin="5"/>
-
 					<TextBlock Text="Les commandes de transition seront ajoutées dans cet espace."
                                Foreground="#668087"
                                Margin="5"/>
-
 				</StackPanel>
-
 			</TabItem>
 
-			<!-- ================================== -->
-			<!-- ANIMATIONS                         -->
-			<!-- ================================== -->
-
+			<!-- ANIMATIONS -->
 			<TabItem Header="Animations">
-
 				<StackPanel Margin="20">
-
 					<TextBlock Text="Animations des éléments"
                                FontSize="16"
                                FontWeight="SemiBold"
                                Foreground="#123B46"
                                Margin="5"/>
-
 					<TextBlock Text="Les commandes d'animation seront ajoutées dans cet espace."
                                Foreground="#668087"
                                Margin="5"/>
-
 				</StackPanel>
-
 			</TabItem>
 
-			<!-- ================================== -->
-			<!-- DIAPORAMA                          -->
-			<!-- ================================== -->
-
+			<!-- DIAPORAMA -->
 			<TabItem Header="Diaporama">
-
 				<StackPanel Margin="20">
-
 					<TextBlock Text="Présentation du diaporama"
                                FontSize="16"
                                FontWeight="SemiBold"
                                Foreground="#123B46"
                                Margin="5"/>
-
 					<TextBlock Text="Les commandes de lancement du diaporama seront ajoutées dans cet espace."
                                Foreground="#668087"
                                Margin="5"/>
-
 				</StackPanel>
-
 			</TabItem>
 
-			<!-- ================================== -->
-			<!-- AFFICHAGE                          -->
-			<!-- ================================== -->
-
+			<!-- AFFICHAGE -->
 			<TabItem Header="Affichage">
-
 				<StackPanel Margin="20">
-
 					<TextBlock Text="Options d'affichage"
                                FontSize="16"
                                FontWeight="SemiBold"
                                Foreground="#123B46"
                                Margin="5"/>
-
 					<TextBlock Text="Les commandes d'affichage seront ajoutées dans cet espace."
                                Foreground="#668087"
                                Margin="5"/>
-
 				</StackPanel>
-
 			</TabItem>
 
 		</TabControl>
 
-		<!-- ====================================== -->
-		<!-- ZONE DE TRAVAIL                        -->
-		<!-- ====================================== -->
-
+		<!-- ZONE DE TRAVAIL -->
 		<Grid Grid.Row="3">
-
 			<Grid.ColumnDefinitions>
 				<ColumnDefinition Width="205"/>
 				<ColumnDefinition Width="*"/>
 				<ColumnDefinition Width="235"/>
 			</Grid.ColumnDefinitions>
 
-			<!-- ================================== -->
-			<!-- PANNEAU GAUCHE : DIAPOSITIVES      -->
-			<!-- ================================== -->
-
+			<!-- PANNEAU GAUCHE : DIAPOSITIVES -->
 			<Border Grid.Column="0"
                     Background="#F3F5F2"
                     BorderBrush="#DCE4E2"
                     BorderThickness="0,0,1,0">
-
 				<DockPanel Margin="10">
 
 					<TextBlock Text="Diapositives"
@@ -1031,25 +775,16 @@
                              ScrollViewer.VerticalScrollBarVisibility="Auto">
 
 						<ListBox.ItemContainerStyle>
-
 							<Style TargetType="{x:Type ListBoxItem}">
-
-								<Setter Property="HorizontalContentAlignment"
-                                        Value="Stretch"/>
-
+								<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
 								<Setter Property="Padding" Value="3"/>
 								<Setter Property="Margin" Value="2,4"/>
-
 							</Style>
-
 						</ListBox.ItemContainerStyle>
 
 						<ListBox.ItemTemplate>
-
 							<DataTemplate>
-
 								<StackPanel Margin="2">
-
 									<Border Background="White"
                                             BorderBrush="#CBD8D5"
                                             BorderThickness="1"
@@ -1058,44 +793,28 @@
                                             Height="100">
 
 										<Viewbox Stretch="Uniform">
-
 											<Canvas Width="960"
                                                     Height="540"
                                                     Background="{Binding BackgroundColor, FallbackValue=White}">
 
 												<ItemsControl ItemsSource="{Binding Elements}">
-
 													<ItemsControl.ItemsPanel>
-
 														<ItemsPanelTemplate>
 															<Canvas/>
 														</ItemsPanelTemplate>
-
 													</ItemsControl.ItemsPanel>
 
 													<ItemsControl.ItemContainerStyle>
-
 														<Style TargetType="{x:Type ContentPresenter}">
-
-															<Setter Property="Canvas.Left"
-                                                                    Value="{Binding X}"/>
-
-															<Setter Property="Canvas.Top"
-                                                                    Value="{Binding Y}"/>
-
-															<Setter Property="Panel.ZIndex"
-                                                                    Value="{Binding ZIndex}"/>
-
+															<Setter Property="Canvas.Left" Value="{Binding X}"/>
+															<Setter Property="Canvas.Top" Value="{Binding Y}"/>
+															<Setter Property="Panel.ZIndex" Value="{Binding ZIndex}"/>
 														</Style>
-
 													</ItemsControl.ItemContainerStyle>
-
 												</ItemsControl>
 
 											</Canvas>
-
 										</Viewbox>
-
 									</Border>
 
 									<TextBlock Text="{Binding Order, StringFormat=Diapositive {0}}"
@@ -1103,65 +822,40 @@
                                                FontSize="12"
                                                Margin="0,4,0,0"
                                                Foreground="#45636A"/>
-
 								</StackPanel>
-
 							</DataTemplate>
-
 						</ListBox.ItemTemplate>
-
 					</ListBox>
-
 				</DockPanel>
-
 			</Border>
 
-			<!-- ================================== -->
-			<!-- CANVAS CENTRAL                     -->
-			<!-- ================================== -->
-
-			<Grid Grid.Column="1"
-                  Background="#E9EFEC">
-
+			<!-- CANVAS CENTRAL -->
+			<Grid Grid.Column="1" Background="#E9EFEC">
 				<ScrollViewer HorizontalScrollBarVisibility="Auto"
                               VerticalScrollBarVisibility="Auto">
-
 					<Grid>
-
 						<Viewbox Stretch="Uniform"
                                  MaxWidth="960"
                                  MaxHeight="540"
                                  Margin="35">
-
 							<Border Background="White"
                                     Width="960"
                                     Height="540"
                                     BorderBrush="#CBD8D5"
                                     BorderThickness="1">
-
 								<canvas:SlideCanvas x:Name="slideCanvas"/>
-
 							</Border>
-
 						</Viewbox>
-
 					</Grid>
-
 				</ScrollViewer>
-
 			</Grid>
 
-			<!-- ================================== -->
-			<!-- PANNEAU DROIT : PROPRIETES         -->
-			<!-- ================================== -->
-
+			<!-- PANNEAU DROIT : PROPRIETES -->
 			<Border Grid.Column="2"
                     Background="#F7F9F7"
                     BorderBrush="#DCE4E2"
                     BorderThickness="1,0,0,0">
-
 				<ScrollViewer VerticalScrollBarVisibility="Auto">
-
 					<StackPanel Margin="12">
 
 						<TextBlock Text="Format de l'élément"
@@ -1170,53 +864,37 @@
                                    Foreground="#123B46"
                                    Margin="0,5,0,12"/>
 
-						<!-- POSITION -->
-
 						<TextBlock Text="Position"
                                    FontWeight="SemiBold"
                                    Foreground="#123B46"
                                    Margin="0,5"/>
 
 						<Grid Margin="0,5">
-
 							<Grid.ColumnDefinitions>
 								<ColumnDefinition Width="*"/>
 								<ColumnDefinition Width="*"/>
 							</Grid.ColumnDefinitions>
 
 							<StackPanel Margin="2">
-
-								<TextBlock Text="Horizontal (X)"
-                                           Foreground="#668087"/>
-
+								<TextBlock Text="Horizontal (X)" Foreground="#668087"/>
 								<TextBox x:Name="txtPositionX"
                                          Text="0"
                                          Padding="5"
                                          IsEnabled="False"
                                          TextChanged="Propriete_TextChanged"/>
-
 							</StackPanel>
 
-							<StackPanel Grid.Column="1"
-                                        Margin="2">
-
-								<TextBlock Text="Vertical (Y)"
-                                           Foreground="#668087"/>
-
+							<StackPanel Grid.Column="1" Margin="2">
+								<TextBlock Text="Vertical (Y)" Foreground="#668087"/>
 								<TextBox x:Name="txtPositionY"
                                          Text="0"
                                          Padding="5"
                                          IsEnabled="False"
                                          TextChanged="Propriete_TextChanged"/>
-
 							</StackPanel>
-
 						</Grid>
 
-						<Separator Margin="0,12"
-                                   Background="#DCE4E2"/>
-
-						<!-- DIMENSIONS -->
+						<Separator Margin="0,12" Background="#DCE4E2"/>
 
 						<TextBlock Text="Dimensions"
                                    FontWeight="SemiBold"
@@ -1224,45 +902,31 @@
                                    Margin="0,5"/>
 
 						<Grid Margin="0,5">
-
 							<Grid.ColumnDefinitions>
 								<ColumnDefinition Width="*"/>
 								<ColumnDefinition Width="*"/>
 							</Grid.ColumnDefinitions>
 
 							<StackPanel Margin="2">
-
-								<TextBlock Text="Largeur"
-                                           Foreground="#668087"/>
-
+								<TextBlock Text="Largeur" Foreground="#668087"/>
 								<TextBox x:Name="txtLargeur"
                                          Text="100"
                                          Padding="5"
                                          IsEnabled="False"
                                          TextChanged="Propriete_TextChanged"/>
-
 							</StackPanel>
 
-							<StackPanel Grid.Column="1"
-                                        Margin="2">
-
-								<TextBlock Text="Hauteur"
-                                           Foreground="#668087"/>
-
+							<StackPanel Grid.Column="1" Margin="2">
+								<TextBlock Text="Hauteur" Foreground="#668087"/>
 								<TextBox x:Name="txtHauteur"
                                          Text="50"
                                          Padding="5"
                                          IsEnabled="False"
                                          TextChanged="Propriete_TextChanged"/>
-
 							</StackPanel>
-
 						</Grid>
 
-						<Separator Margin="0,12"
-                                   Background="#DCE4E2"/>
-
-						<!-- APPARENCE -->
+						<Separator Margin="0,12" Background="#DCE4E2"/>
 
 						<TextBlock Text="Apparence"
                                    FontWeight="SemiBold"
@@ -1295,10 +959,7 @@
                                    HorizontalAlignment="Center"
                                    Margin="2,5"/>
 
-						<!-- LISTE DES CALQUES -->
-
-						<Separator Margin="0,15"
-                                   Background="#DCE4E2"/>
+						<Separator Margin="0,15" Background="#DCE4E2"/>
 
 						<TextBlock Text="Calques de la diapositive"
                                    FontSize="14"
@@ -1320,50 +981,28 @@
                                  ScrollViewer.VerticalScrollBarVisibility="Auto">
 
 							<ListBox.ItemContainerStyle>
-
 								<Style TargetType="{x:Type ListBoxItem}">
-
 									<Setter Property="Padding" Value="7"/>
 									<Setter Property="Margin" Value="2"/>
-
-									<Setter Property="HorizontalContentAlignment"
-                                            Value="Stretch"/>
-
-									<Setter Property="Cursor"
-                                            Value="Hand"/>
-
+									<Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+									<Setter Property="Cursor" Value="Hand"/>
 									<Style.Triggers>
-
-										<Trigger Property="IsSelected"
-                                                 Value="True">
-
-											<Setter Property="Background"
-                                                    Value="#E5F4F1"/>
-
-											<Setter Property="Foreground"
-                                                    Value="#123B46"/>
-
+										<Trigger Property="IsSelected" Value="True">
+											<Setter Property="Background" Value="#E5F4F1"/>
+											<Setter Property="Foreground" Value="#123B46"/>
 										</Trigger>
-
 									</Style.Triggers>
-
 								</Style>
-
 							</ListBox.ItemContainerStyle>
 
 							<ListBox.ItemTemplate>
-
 								<DataTemplate>
-
 									<TextBlock Text="{Binding Nom}"
                                                FontSize="12"
                                                TextTrimming="CharacterEllipsis"
                                                VerticalAlignment="Center"/>
-
 								</DataTemplate>
-
 							</ListBox.ItemTemplate>
-
 						</ListBox>
 
 						<TextBlock Text="Utilisez les boutons du ruban pour modifier l'ordre des calques."
@@ -1373,24 +1012,16 @@
                                    Margin="2,6,2,5"/>
 
 					</StackPanel>
-
 				</ScrollViewer>
-
 			</Border>
-
 		</Grid>
 
-		<!-- ====================================== -->
-		<!-- BARRE D'ETAT                          -->
-		<!-- ====================================== -->
-
+		<!-- BARRE D'ETAT -->
 		<Border Grid.Row="4"
                 Background="#FFFFFF"
                 BorderBrush="#DCE4E2"
                 BorderThickness="0,1,0,0">
-
 			<Grid Margin="12,0">
-
 				<Grid.ColumnDefinitions>
 					<ColumnDefinition Width="*"/>
 					<ColumnDefinition Width="Auto"/>
@@ -1404,29 +1035,22 @@
 				<StackPanel Grid.Column="1"
                             Orientation="Horizontal"
                             VerticalAlignment="Center">
-
 					<TextBlock Text="Zoom"
                                FontSize="11"
                                Foreground="#45636A"
                                VerticalAlignment="Center"/>
-
 					<Slider Width="100"
                             Minimum="50"
                             Maximum="150"
                             Value="100"
                             Margin="10,0"/>
-
 					<TextBlock Text="100%"
                                FontSize="11"
                                Foreground="#45636A"
                                VerticalAlignment="Center"/>
-
 				</StackPanel>
-
 			</Grid>
-
 		</Border>
 
 	</Grid>
-
 </Window>
