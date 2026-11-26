@@ -893,17 +893,38 @@
 
 			<!-- DIAPORAMA -->
 			<TabItem Header="Diaporama">
-				<StackPanel Margin="20">
-					<TextBlock Text="Présentation du diaporama"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Foreground="#123B46"
-                               Margin="5"/>
-					<TextBlock Text="Les commandes de lancement du diaporama seront ajoutées dans cet espace."
-                               Foreground="#668087"
-                               Margin="5"/>
-				</StackPanel>
-			</TabItem>
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <StackPanel Margin="20" MaxWidth="760">
+                        <TextBlock Text="Présenter le diaporama"
+                                   FontSize="20"
+                                   FontWeight="Bold"
+                                   Foreground="#123B46"
+                                   Margin="5,5,5,12"/>
+                        <TextBlock Text="Lancez la présentation en plein écran. Les transitions et les animations configurées seront exécutées automatiquement."
+                                   TextWrapping="Wrap"
+                                   Foreground="#668087"
+                                   Margin="5,0,5,18"/>
+                        <Button Content="▶  Démarrer depuis le début"
+                                Height="44" Margin="5,5"
+                                HorizontalAlignment="Left" MinWidth="250"
+                                Click="BtnDemarrerDiaporama_Click"/>
+                        <Button Content="▶  Démarrer depuis la diapositive sélectionnée"
+                                Height="44" Margin="5,5"
+                                HorizontalAlignment="Left" MinWidth="330"
+                                Click="BtnDemarrerDepuisSelection_Click"/>
+                        <Separator Margin="5,18"/>
+                        <TextBlock Text="Navigation pendant la présentation"
+                                   FontSize="15" FontWeight="SemiBold"
+                                   Foreground="#123B46" Margin="5,5,5,10"/>
+                        <TextBlock Text="→ / Espace / Entrée : diapositive suivante&#10;← / Retour arrière : diapositive précédente&#10;Échap : quitter le diaporama&#10;Clic sur la diapositive : avancer"
+                                   TextWrapping="Wrap" LineHeight="25"
+                                   Foreground="#45636A" Margin="5"/>
+                        <TextBlock Text="Les animations sont lancées dans l'ordre des calques. Le délai, la durée, la direction et les répétitions sont lus depuis les propriétés de chaque élément."
+                                   TextWrapping="Wrap" Foreground="#668087"
+                                   Margin="5,18,5,5"/>
+                    </StackPanel>
+                </ScrollViewer>
+            </TabItem>
 
 			<!-- AFFICHAGE -->
 			<TabItem Header="Affichage">
