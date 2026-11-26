@@ -136,7 +136,7 @@
                 <Separator Margin="0,14,0,0"/>
                 <TextBlock Text="Calques de la diapositive" Style="{StaticResource TitreSection}"/>
                 <TextBlock Text="Du premier plan (en haut) à l'arrière-plan (en bas)."
-                           FontSize="11" Foreground="#777777" Margin="2,0,2,5"/>
+                           FontSize="11" Foreground="#777777" Margin="2,0,2,5" TextWrapping="Wrap"/>
 
                 <ListBox ItemsSource="{Binding Calques}"
                          SelectedItem="{Binding CalqueSelectionne}"

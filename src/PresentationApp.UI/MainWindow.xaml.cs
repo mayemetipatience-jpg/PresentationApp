@@ -1,1037 +1,509 @@
-﻿
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
+﻿using System.ComponentModel;
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Win32;
+using PresentationApp.Core.Commands;
 using PresentationApp.Core.Models;
+using PresentationApp.UI.ViewModels;
+using PresentationApp.UI.Views;
 
 namespace PresentationApp.UI;
 
+// Fenêtre principale : elle assemble les panneaux et fait le lien entre eux.
+//   - les données et l'historique Undo/Redo sont dans MainViewModel (Étudiant 1)
+//   - chaque panneau a son ViewModel (SlideListViewModel, PropertiesViewModel)
+//   - le canevas (Étudiant 2) affiche et manipule la diapositive à la souris
 public partial class MainWindow : Window
 {
-    private readonly Presentation _presentation = new();
+    private const string FiltreFichiers = "Présentation (*.json)|*.json|Tous les fichiers (*.*)|*.*";
 
-    private SlideElement? _elementActuel;
-    private SlideElement? _elementCopie;
+    private readonly MainViewModel _vm;
+    private readonly SlideListViewModel _diapositives;
+    private readonly PropertiesViewModel _proprietes;
 
-    private bool _actualisationEnCours;
-    private bool _actualisationCalquesEnCours;
+    private SlideElement? _elementCopie;   // presse-papiers interne
+    private bool _modifie;                 // modifications non enregistrées ?
 
     private readonly string[] _couleursFond =
     {
-        "#FFFFFF",
-        "#F2F2F2",
-        "#DDEBF7",
-        "#E2F0D9",
-        "#FFF2CC",
-        "#FCE4D6",
-        "#E4DFEC"
+        "#FFFFFF", "#F2F2F2", "#DDEBF7", "#E2F0D9", "#FFF2CC", "#FCE4D6", "#E4DFEC"
     };
-
     private int _indexCouleurFond;
-
-    private const string TexteTitre =
-        "Cliquez pour ajouter un titre";
-
-    private const string TexteSousTitre =
-        "Cliquez pour ajouter un sous-titre";
-
-    // Élément affiché dans la liste des calques
-    private class CalqueItem
-    {
-        public SlideElement Element { get; set; }
-
-        public string Nom { get; set; }
-
-        public CalqueItem(SlideElement element, string nom)
-        {
-            Element = element;
-            Nom = nom;
-        }
-    }
 
     public MainWindow()
     {
         InitializeComponent();
 
-        slideCanvas.ElementSelectionChangee +=
-            SlideCanvas_ElementSelectionChangee;
+        // Une présentation neuve commence avec une diapositive titre + sous-titre
+        var presentation = new Presentation();
+        presentation.Slides.Add(SlideListViewModel.CreerDiapositive());
 
-        slideCanvas.DiapositiveModifiee +=
-            SlideCanvas_DiapositiveModifiee;
+        _vm = new MainViewModel(presentation);
+        _diapositives = new SlideListViewModel(_vm) { Confirmer = Confirmer };
+        _proprietes = new PropertiesViewModel(_vm);
 
-        lstCalques.SelectionChanged +=
-            LstCalques_SelectionChanged;
+        // Chaque panneau reçoit son ViewModel
+        panneauDiapositives.DataContext = _diapositives;
+        panneauProprietes.DataContext = _proprietes;
+        ruban.DataContext = _proprietes;
+
+        // Le ruban signale les actions, la fenêtre les exécute
+        ruban.ActionDemandee += Ruban_ActionDemandee;
+        ruban.FormeDemandee += AjouterForme;
+
+        // Canevas -> ViewModel
+        slideCanvas.ElementSelectionChangee += element => _vm.SelectedElement = element;
+        slideCanvas.DiapositiveModifiee += SlideCanvas_DiapositiveModifiee;
+
+        // ViewModel -> canevas
+        _vm.PropertyChanged += Vm_PropertyChanged;
+        _vm.History.Changed += History_Changed;
 
         PreviewKeyDown += MainWindow_PreviewKeyDown;
+        Closing += MainWindow_Closing;
 
-        InitialiserPresentation();
+        slideCanvas.DisplaySlide(_vm.SelectedSlide);
+        MettreAJourTitre();
+        MettreAJourInfo();
     }
 
-    private void InitialiserPresentation()
+    // =====================================================
+    // SYNCHRONISATION ENTRE LES PANNEAUX
+    // =====================================================
+
+    private void Vm_PropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
-        var premiereDiapositive = CreerDiapositive(1);
-
-        _presentation.Slides.Add(premiereDiapositive);
-
-        lstDiapositives.ItemsSource = _presentation.Slides;
-
-        lstDiapositives.SelectionChanged +=
-            LstDiapositives_SelectionChanged;
-
-        lstDiapositives.SelectedIndex = 0;
-    }
-
-    private Slide CreerDiapositive(int ordre)
-    {
-        var diapositive = new Slide
+        switch (e.PropertyName)
         {
-            Order = ordre
-        };
+            case nameof(MainViewModel.SelectedSlide):
+                slideCanvas.DisplaySlide(_vm.SelectedSlide);
+                MettreAJourInfo();
+                break;
 
-        diapositive.Elements.Add(new TextElement
-        {
-            X = 100,
-            Y = 130,
-            Width = 760,
-            Height = 90,
-            Text = TexteTitre,
-            Style = new ElementStyle
-            {
-                TextAlignment = "Center",
-                FontSize = 18
-            }
-        });
+            // Sélection faite ailleurs que sur le canevas (liste des calques, collage...)
+            case nameof(MainViewModel.SelectedElement):
+                if (_vm.SelectedElement is { } element &&
+                    !ReferenceEquals(slideCanvas.ElementSelectionne, element))
+                    slideCanvas.SelectionnerElementDepuisListe(element);
+                break;
 
-        diapositive.Elements.Add(new TextElement
-        {
-            X = 100,
-            Y = 240,
-            Width = 760,
-            Height = 70,
-            Text = TexteSousTitre,
-            Style = new ElementStyle
-            {
-                TextAlignment = "Center",
-                FontSize = 18
-            }
-        });
-
-        return diapositive;
-    }
-
-    private void LstDiapositives_SelectionChanged(
-        object sender,
-        SelectionChangedEventArgs e)
-    {
-        if (lstDiapositives.SelectedItem is Slide slide)
-        {
-            _elementActuel = null;
-            slideCanvas.DisplaySlide(slide);
-            ActualiserListeCalques();
+            case nameof(MainViewModel.CheminFichier):
+                MettreAJourTitre();
+                break;
         }
     }
 
-    private void BtnNouvelleDiapositive_Click(
-        object sender,
-        RoutedEventArgs e)
+    // Après chaque action ou Annuler/Refaire : on redessine la diapositive
+    // et on garde l'élément sélectionné s'il existe toujours.
+    private void History_Changed(object? sender, EventArgs e)
     {
-        int nouvelOrdre = _presentation.Slides.Count + 1;
+        SlideElement? element = _vm.SelectedElement;
+        Slide? diapositive = _vm.SelectedSlide;
 
-        var nouvelleDiapositive = CreerDiapositive(nouvelOrdre);
+        slideCanvas.DisplaySlide(diapositive);
 
-        _presentation.Slides.Add(nouvelleDiapositive);
+        if (element != null && diapositive != null && diapositive.Elements.Contains(element))
+            slideCanvas.SelectionnerElementDepuisListe(element);
 
-        lstDiapositives.Items.Refresh();
-        lstDiapositives.SelectedItem = nouvelleDiapositive;
+        MarquerModifie();
+        MettreAJourInfo();
     }
 
-    private void BtnTexte_Click(
-        object sender,
-        RoutedEventArgs e)
+    // Modification faite directement à la souris dans le canevas (déplacement, texte...)
+    private void SlideCanvas_DiapositiveModifiee()
     {
-        if (lstDiapositives.SelectedItem is Slide slide)
-            slideCanvas.ActiverInsertionTexte(slide);
+        panneauDiapositives.Rafraichir();
+        _proprietes.RechargerCalques();
+        _proprietes.Recharger();
+        MarquerModifie();
     }
 
-    // INSERTION DES FORMES
-
-    private void CmbFormes_SelectionChanged(
-        object sender,
-        SelectionChangedEventArgs e)
+    private void MarquerModifie()
     {
-        if (cmbFormes.SelectedItem is not ComboBoxItem item)
+        if (_modifie) return;
+        _modifie = true;
+        MettreAJourTitre();
+    }
+
+    private void MettreAJourTitre()
+    {
+        string nom = string.IsNullOrEmpty(_vm.CheminFichier)
+            ? "Présentation sans titre"
+            : Path.GetFileNameWithoutExtension(_vm.CheminFichier);
+
+        string etoile = _modifie ? " *" : string.Empty;
+        txtTitre.Text = $"Mini PowerPoint | {nom}{etoile}";
+        Title = $"{nom}{etoile} - Mini PowerPoint";
+    }
+
+    private void MettreAJourInfo()
+    {
+        int numero = _vm.SelectedSlide != null ? _vm.Slides.IndexOf(_vm.SelectedSlide) + 1 : 0;
+        txtInfo.Text = $"Diapositive {numero} sur {_vm.SlideCount}";
+    }
+
+    // =====================================================
+    // ACTIONS DU RUBAN
+    // =====================================================
+
+    private void Ruban_ActionDemandee(ActionRuban action)
+    {
+        switch (action)
+        {
+            case ActionRuban.Nouveau: Nouveau(); break;
+            case ActionRuban.Ouvrir: Ouvrir(); break;
+            case ActionRuban.Enregistrer: Enregistrer(demanderChemin: false); break;
+            case ActionRuban.EnregistrerSous: Enregistrer(demanderChemin: true); break;
+
+            case ActionRuban.Copier: Copier(); break;
+            case ActionRuban.Couper: Couper(); break;
+            case ActionRuban.Coller: Coller(); break;
+
+            case ActionRuban.NouvelleDiapositive: _diapositives.NouvelleCommand.Execute(null); break;
+            case ActionRuban.DupliquerDiapositive: _diapositives.DupliquerCommand.Execute(null); break;
+            case ActionRuban.SupprimerDiapositive:
+                if (_diapositives.SupprimerCommand.CanExecute(null))
+                    _diapositives.SupprimerCommand.Execute(null);
+                else
+                    Informer("La présentation doit conserver au moins une diapositive.", "Suppression");
+                break;
+
+            case ActionRuban.ZoneTexte:
+                if (_vm.SelectedSlide != null)
+                    slideCanvas.ActiverInsertionTexte(_vm.SelectedSlide);
+                break;
+            case ActionRuban.Image: InsererImage(); break;
+
+            case ActionRuban.PremierPlan: ModifierCalque(slideCanvas.MettreAuPremierPlan); break;
+            case ActionRuban.ArrierePlan: ModifierCalque(slideCanvas.MettreEnArrierePlan); break;
+            case ActionRuban.Avancer: ModifierCalque(slideCanvas.AvancerDUnCalque); break;
+            case ActionRuban.Reculer: ModifierCalque(slideCanvas.ReculerDUnCalque); break;
+
+            case ActionRuban.CouleurFond: ChangerCouleurFond(); break;
+        }
+    }
+
+    // ---------- Insertion (passe par l'historique : Ctrl+Z annule l'ajout) ----------
+
+    private void AjouterElement(SlideElement element)
+    {
+        if (_vm.SelectedSlide is not { } diapositive)
             return;
 
-        if (item.Tag == null)
-            return;
-
-        if (!Enum.TryParse(
-                item.Tag.ToString(),
-                out ShapeType type))
-            return;
-
-        AjouterForme(type);
-
-        cmbFormes.SelectedIndex = -1;
+        _vm.History.Execute(new AddElementCommand(diapositive, element));
+        _vm.SelectedElement = element;
     }
 
     private void AjouterForme(ShapeType type)
     {
-        if (lstDiapositives.SelectedItem is not Slide slide)
-            return;
-
-        var forme = new ShapeElement
+        AjouterElement(new ShapeElement
         {
-            X = 300,
-            Y = 180,
-            Width = 180,
-            Height = 120,
+            X = 300, Y = 180, Width = 180, Height = 120,
             ShapeType = type,
-            Style = new ElementStyle
-            {
-                FillColor = "#ADD8E6",
-                StrokeColor = "#000000",
-                StrokeThickness = 2
-            }
+            Style = new ElementStyle { FillColor = "#ADD8E6", StrokeColor = "#000000", StrokeThickness = 2 }
+        });
+    }
+
+    private void InsererImage()
+    {
+        var dialogue = new OpenFileDialog
+        {
+            Title = "Choisir une image",
+            Filter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif"
         };
 
-        slide.Elements.Add(forme);
+        if (dialogue.ShowDialog(this) != true)
+            return;
 
-        slideCanvas.DisplaySlide(slide);
-        lstDiapositives.Items.Refresh();
-        ActualiserListeCalques();
+        AjouterElement(new ImageElement
+        {
+            ImagePath = dialogue.FileName,
+            X = 250, Y = 150, Width = 300, Height = 200
+        });
     }
 
-    // COPIER
+    // ---------- Presse-papiers ----------
 
-    private void BtnCopier_Click(
-        object sender,
-        RoutedEventArgs e)
+    private void Copier()
     {
-        SlideElement? element = slideCanvas.ElementSelectionne
-            ?? _elementActuel;
-
-        if (element == null)
+        if (_vm.SelectedElement is not { } element)
         {
-            MessageBox.Show(
-                "Sélectionnez un élément à copier.",
-                "Copier",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            Informer("Sélectionnez un élément à copier.", "Copier");
             return;
         }
-
         _elementCopie = ClonerElement(element);
     }
 
-    // COUPER
-
-    private void BtnCouper_Click(
-        object sender,
-        RoutedEventArgs e)
+    private void Couper()
     {
-        SlideElement? element = slideCanvas.ElementSelectionne
-            ?? _elementActuel;
-
-        if (element == null)
+        if (_vm.SelectedElement is not { } element)
         {
-            MessageBox.Show(
-                "Sélectionnez un élément à couper.",
-                "Couper",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            Informer("Sélectionnez un élément à couper.", "Couper");
             return;
         }
-
         _elementCopie = ClonerElement(element);
-
-        SupprimerElementSelectionne();
+        _vm.DeleteElementCommand.Execute(null);
     }
 
-    // COLLER
-
-    private void BtnColler_Click(
-        object sender,
-        RoutedEventArgs e)
+    private void Coller()
     {
         if (_elementCopie == null)
         {
-            MessageBox.Show(
-                "Aucun élément à coller. Copiez d'abord un élément.",
-                "Coller",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            Informer("Aucun élément à coller. Copiez d'abord un élément.", "Coller");
             return;
         }
 
-        if (lstDiapositives.SelectedItem is not Slide slide)
-            return;
-
-        SlideElement nouvelElement = ClonerElement(_elementCopie);
-
-        nouvelElement.X += 30;
-        nouvelElement.Y += 30;
-
-        slide.Elements.Add(nouvelElement);
-
-        slideCanvas.DisplaySlide(slide);
-        lstDiapositives.Items.Refresh();
-        ActualiserListeCalques();
+        // Une nouvelle copie à chaque collage, décalée pour qu'on la voie
+        SlideElement copie = ClonerElement(_elementCopie);
+        copie.X += 30;
+        copie.Y += 30;
+        AjouterElement(copie);
     }
 
-    // CLONAGE
-
-    private SlideElement ClonerElement(SlideElement element)
+    private static SlideElement ClonerElement(SlideElement element)
     {
-        ElementStyle style = new()
+        SlideElement copie = element switch
         {
-            FillColor = element.Style.FillColor,
-            StrokeColor = element.Style.StrokeColor,
-            StrokeThickness = element.Style.StrokeThickness,
-            TextColor = element.Style.TextColor,
-            FontFamily = element.Style.FontFamily,
-            FontSize = element.Style.FontSize,
-            IsBold = element.Style.IsBold,
-            IsItalic = element.Style.IsItalic,
-            IsUnderline = element.Style.IsUnderline,
-            TextAlignment = element.Style.TextAlignment
+            TextElement texte => new TextElement { Text = texte.Text },
+            ShapeElement forme => new ShapeElement { ShapeType = forme.ShapeType },
+            ImageElement image => new ImageElement { ImagePath = image.ImagePath },
+            _ => throw new NotSupportedException("Type d'élément non pris en charge.")
         };
-
-        SlideElement copie;
-
-        if (element is TextElement texte)
-        {
-            copie = new TextElement
-            {
-                Text = texte.Text
-            };
-        }
-        else if (element is ShapeElement forme)
-        {
-            copie = new ShapeElement
-            {
-                ShapeType = forme.ShapeType
-            };
-        }
-        else if (element is ImageElement image)
-        {
-            copie = new ImageElement
-            {
-                ImagePath = image.ImagePath
-            };
-        }
-        else
-        {
-            throw new NotSupportedException(
-                "Type d'élément non pris en charge.");
-        }
 
         copie.X = element.X;
         copie.Y = element.Y;
         copie.Width = element.Width;
         copie.Height = element.Height;
         copie.Rotation = element.Rotation;
-        copie.ZIndex = element.ZIndex;
-        copie.Style = style;
-
+        copie.Style = ChangeStyleCommand.Copy(element.Style);
         return copie;
     }
 
-    // INSERTION D'UNE IMAGE
+    // ---------- Calques et fond (gérés par le canevas) ----------
 
-    private void BtnImage_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        if (lstDiapositives.SelectedItem is not Slide slide)
-            return;
-
-        OpenFileDialog dialogue = new()
-        {
-            Title = "Choisir une image",
-            Filter = "Images|*.png;*.jpg;*.jpeg;*.bmp;*.gif"
-        };
-
-        if (dialogue.ShowDialog() != true)
-            return;
-
-        var nouvelImage = new ImageElement
-        {
-            ImagePath = dialogue.FileName,
-            X = 250,
-            Y = 150,
-            Width = 300,
-            Height = 200
-        };
-
-        slide.Elements.Add(nouvelImage);
-
-        slideCanvas.DisplaySlide(slide);
-        lstDiapositives.Items.Refresh();
-        ActualiserListeCalques();
-    }
-
-    // ARRIERE-PLAN DE LA DIAPOSITIVE
-
-    private void BtnArrierePlan_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        if (lstDiapositives.SelectedItem is not Slide slide)
-            return;
-
-        _indexCouleurFond =
-            (_indexCouleurFond + 1) % _couleursFond.Length;
-
-        slide.BackgroundColor = _couleursFond[_indexCouleurFond];
-
-        slideCanvas.DisplaySlide(slide);
-        lstDiapositives.Items.Refresh();
-        ActualiserListeCalques();
-    }
-
-    // GESTION DES CALQUES
-
-    private void BtnPremierPlan_Click(
-        object sender,
-        RoutedEventArgs e)
+    private void ModifierCalque(Action action)
     {
         if (slideCanvas.ElementSelectionne == null)
         {
-            AfficherMessageSelectionCalque();
+            Informer("Sélectionnez d'abord un élément sur la diapositive.", "Ordre des calques");
+            return;
+        }
+        action();
+        SlideCanvas_DiapositiveModifiee();
+    }
+
+    private void ChangerCouleurFond()
+    {
+        if (_vm.SelectedSlide is not { } diapositive)
+            return;
+
+        _indexCouleurFond = (_indexCouleurFond + 1) % _couleursFond.Length;
+        diapositive.BackgroundColor = _couleursFond[_indexCouleurFond];
+
+        slideCanvas.DisplaySlide(diapositive);
+        SlideCanvas_DiapositiveModifiee();
+    }
+
+    private void SupprimerElement()
+    {
+        if (_vm.SelectedElement == null)
+        {
+            Informer("Sélectionnez d'abord un élément à supprimer.", "Suppression");
+            return;
+        }
+        _vm.DeleteElementCommand.Execute(null);
+    }
+
+    // =====================================================
+    // FICHIER : NOUVEAU, OUVRIR, ENREGISTRER
+    // =====================================================
+
+    // Comme dans PowerPoint, « Nouveau » ouvre une nouvelle fenêtre
+    private void Nouveau()
+    {
+        new MainWindow().Show();
+    }
+
+    private void Ouvrir()
+    {
+        if (!ConfirmerAbandonModifications())
+            return;
+
+        var dialogue = new OpenFileDialog { Title = "Ouvrir une présentation", Filter = FiltreFichiers };
+        if (dialogue.ShowDialog(this) != true)
+            return;
+
+        bool ouvert;
+        try
+        {
+            ouvert = _vm.Ouvrir(dialogue.FileName);
+        }
+        catch (UnauthorizedAccessException)
+        {
+            Erreur("Vous n'avez pas le droit de lire ce fichier.");
             return;
         }
 
-        slideCanvas.MettreAuPremierPlan();
-        lstDiapositives.Items.Refresh();
-        ActualiserListeCalques();
-    }
-
-    private void BtnArrierePlanCalque_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        if (slideCanvas.ElementSelectionne == null)
+        if (!ouvert)
         {
-            AfficherMessageSelectionCalque();
+            Erreur(_vm.ErrorMessage ?? "Impossible d'ouvrir ce fichier.");
             return;
         }
 
-        slideCanvas.MettreEnArrierePlan();
-        lstDiapositives.Items.Refresh();
-        ActualiserListeCalques();
+        _modifie = false;
+        MettreAJourTitre();
     }
 
-    private void BtnAvancerCalque_Click(
-        object sender,
-        RoutedEventArgs e)
+    // Renvoie false si l'utilisateur a annulé ou si l'enregistrement a échoué
+    private bool Enregistrer(bool demanderChemin)
     {
-        if (slideCanvas.ElementSelectionne == null)
+        string? chemin = _vm.CheminFichier;
+
+        if (demanderChemin || string.IsNullOrEmpty(chemin))
         {
-            AfficherMessageSelectionCalque();
-            return;
-        }
-
-        slideCanvas.AvancerDUnCalque();
-        lstDiapositives.Items.Refresh();
-        ActualiserListeCalques();
-    }
-
-    private void BtnReculerCalque_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        if (slideCanvas.ElementSelectionne == null)
-        {
-            AfficherMessageSelectionCalque();
-            return;
-        }
-
-        slideCanvas.ReculerDUnCalque();
-        lstDiapositives.Items.Refresh();
-        ActualiserListeCalques();
-    }
-
-    private void AfficherMessageSelectionCalque()
-    {
-        MessageBox.Show(
-            "Sélectionnez d'abord un élément sur la diapositive.",
-            "Gestion des calques",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
-    }
-
-    // ACTUALISATION DE LA LISTE DES CALQUES
-
-    private void ActualiserListeCalques()
-    {
-        if (lstDiapositives.SelectedItem is not Slide slide)
-        {
-            lstCalques.ItemsSource = null;
-            return;
-        }
-
-        _actualisationCalquesEnCours = true;
-
-        SlideElement? elementSelectionne =
-            slideCanvas.ElementSelectionne ?? _elementActuel;
-
-        var elements = slide.Elements
-            .OrderByDescending(element => element.ZIndex)
-            .ToList();
-
-        List<CalqueItem> calques = new();
-
-        foreach (SlideElement element in elements)
-        {
-            string nom;
-
-            if (element is TextElement texte)
+            var dialogue = new SaveFileDialog
             {
-                string contenu = texte.Text ?? "";
+                Title = "Enregistrer la présentation",
+                Filter = FiltreFichiers,
+                DefaultExt = ".json",
+                FileName = string.IsNullOrEmpty(chemin) ? "Présentation" : Path.GetFileName(chemin)
+            };
 
-                if (string.IsNullOrWhiteSpace(contenu))
-                    contenu = "Texte vide";
+            if (dialogue.ShowDialog(this) != true)
+                return false;
 
-                if (contenu.Length > 25)
-                    contenu = contenu.Substring(0, 25) + "...";
-
-                nom = "Texte : " + contenu;
-            }
-            else if (element is ShapeElement forme)
-            {
-                nom = "Forme : " + forme.ShapeType;
-            }
-            else if (element is ImageElement)
-            {
-                nom = "Image";
-            }
-            else
-            {
-                nom = "Élément";
-            }
-
-            calques.Add(new CalqueItem(element, nom));
+            chemin = dialogue.FileName;
         }
 
-        lstCalques.ItemsSource = calques;
+        _vm.Enregistrer(chemin);
 
-        if (elementSelectionne != null)
+        if (_vm.ErrorMessage != null)
         {
-            foreach (CalqueItem calque in calques)
-            {
-                if (ReferenceEquals(
-                        calque.Element,
-                        elementSelectionne))
-                {
-                    lstCalques.SelectedItem = calque;
-                    break;
-                }
-            }
+            Erreur(_vm.ErrorMessage);
+            return false;
         }
 
-        _actualisationCalquesEnCours = false;
+        _modifie = false;
+        MettreAJourTitre();
+        return true;
     }
 
-    // SÉLECTION DEPUIS LA LISTE DES CALQUES
-
-    private void LstCalques_SelectionChanged(
-        object sender,
-        SelectionChangedEventArgs e)
+    // Avant de perdre des modifications : Oui = enregistrer, Non = abandonner, Annuler = rester
+    private bool ConfirmerAbandonModifications()
     {
-        if (_actualisationCalquesEnCours)
-            return;
-
-        if (lstCalques.SelectedItem is not CalqueItem calque)
-            return;
-
-        slideCanvas.SelectionnerElementDepuisListe(
-            calque.Element);
-    }
-
-    // ROTATION
-
-    private void BtnRotation_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        if (_elementActuel == null)
-        {
-            MessageBox.Show(
-                "Sélectionnez un élément à faire pivoter.",
-                "Rotation",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-            return;
-        }
-
-        _elementActuel.Rotation =
-            (_elementActuel.Rotation + 90) % 360;
-
-        slideCanvas.ActualiserElementSelectionne();
-        SlideCanvas_ElementSelectionChangee(_elementActuel);
-    }
-
-    // SUPPRESSION D'UN ELEMENT
-
-    private void BtnSupprimerElement_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        SupprimerElementSelectionne();
-    }
-
-    private void SupprimerElementSelectionne()
-    {
-        if (lstDiapositives.SelectedItem is not Slide slide)
-            return;
-
-        SlideElement? elementASupprimer =
-            slideCanvas.ElementSelectionne ?? _elementActuel;
-
-        if (elementASupprimer == null)
-        {
-            MessageBox.Show(
-                "Sélectionnez d'abord un élément à supprimer.",
-                "Suppression",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-            return;
-        }
-
-        bool elementSupprime =
-            slide.Elements.Remove(elementASupprimer);
-
-        if (!elementSupprime)
-        {
-            MessageBox.Show(
-                "Impossible de trouver cet élément dans la diapositive.",
-                "Suppression",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-            return;
-        }
-
-        _elementActuel = null;
-
-        slideCanvas.DisplaySlide(slide);
-
-        lstDiapositives.Items.Refresh();
-        ActualiserListeCalques();
-    }
-
-    // SUPPRESSION D'UNE DIAPOSITIVE
-
-    private void BtnSupprimerDiapositive_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        if (lstDiapositives.SelectedItem is not Slide slide)
-            return;
-
-        if (_presentation.Slides.Count <= 1)
-        {
-            MessageBox.Show(
-                "La présentation doit conserver au moins une diapositive.",
-                "Suppression",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-            return;
-        }
-
-        MessageBoxResult resultat = MessageBox.Show(
-            "Voulez-vous vraiment supprimer cette diapositive ?",
-            "Confirmation",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
-
-        if (resultat != MessageBoxResult.Yes)
-            return;
-
-        int index = lstDiapositives.SelectedIndex;
-
-        _presentation.Slides.Remove(slide);
-
-        for (int i = 0; i < _presentation.Slides.Count; i++)
-            _presentation.Slides[i].Order = i + 1;
-
-        lstDiapositives.Items.Refresh();
-
-        lstDiapositives.SelectedIndex =
-            Math.Min(index, _presentation.Slides.Count - 1);
-    }
-
-    // FORMATAGE DU TEXTE
-
-    private bool VerifierSelectionTexte()
-    {
-        if (_elementActuel is TextElement)
+        if (!_modifie)
             return true;
 
-        MessageBox.Show(
-            "Sélectionnez d'abord une zone de texte.",
-            "Formatage du texte",
-            MessageBoxButton.OK,
-            MessageBoxImage.Information);
+        MessageBoxResult reponse = MessageBox.Show(this,
+            "La présentation a été modifiée. Voulez-vous enregistrer les modifications ?",
+            "Mini PowerPoint", MessageBoxButton.YesNoCancel, MessageBoxImage.Warning);
 
-        return false;
+        return reponse switch
+        {
+            MessageBoxResult.Yes => Enregistrer(demanderChemin: false),
+            MessageBoxResult.No => true,
+            _ => false
+        };
     }
 
-    private void ActualiserFormatageTexte()
+    private void MainWindow_Closing(object? sender, CancelEventArgs e)
     {
-        if (_elementActuel is not TextElement)
-            return;
-
-        slideCanvas.ActualiserElementSelectionne();
-        lstDiapositives.Items.Refresh();
+        if (!ConfirmerAbandonModifications())
+            e.Cancel = true;
     }
 
-    private void CmbPolice_SelectionChanged(
-        object sender,
-        SelectionChangedEventArgs e)
-    {
-        if (_actualisationEnCours ||
-            _elementActuel is not TextElement texte)
-            return;
-
-        if (cmbPolice.SelectedItem is not ComboBoxItem item)
-            return;
-
-        string? police = item.Content?.ToString();
-
-        if (string.IsNullOrWhiteSpace(police))
-            return;
-
-        texte.Style.FontFamily = police;
-        ActualiserFormatageTexte();
-    }
-
-    private void CmbTaille_SelectionChanged(
-        object sender,
-        SelectionChangedEventArgs e)
-    {
-        if (_actualisationEnCours ||
-            _elementActuel is not TextElement texte)
-            return;
-
-        if (cmbTaille.SelectedItem is not ComboBoxItem item)
-            return;
-
-        if (!double.TryParse(
-                item.Content?.ToString(),
-                CultureInfo.InvariantCulture,
-                out double taille))
-            return;
-
-        if (taille <= 0)
-            return;
-
-        texte.Style.FontSize = taille;
-        ActualiserFormatageTexte();
-    }
-
-    private void CmbCouleurTexte_SelectionChanged(
-        object sender,
-        SelectionChangedEventArgs e)
-    {
-        if (_actualisationEnCours ||
-            _elementActuel is not TextElement texte)
-            return;
-
-        if (cmbCouleurTexte.SelectedItem is not ComboBoxItem item)
-            return;
-
-        if (item.Tag == null)
-            return;
-
-        texte.Style.TextColor = item.Tag.ToString()!;
-        ActualiserFormatageTexte();
-    }
-
-    private void BtnGras_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        if (!VerifierSelectionTexte())
-            return;
-
-        TextElement texte = (TextElement)_elementActuel!;
-        texte.Style.IsBold = !texte.Style.IsBold;
-
-        ActualiserFormatageTexte();
-    }
-
-    private void BtnItalique_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        if (!VerifierSelectionTexte())
-            return;
-
-        TextElement texte = (TextElement)_elementActuel!;
-        texte.Style.IsItalic = !texte.Style.IsItalic;
-
-        ActualiserFormatageTexte();
-    }
-
-    private void BtnSouligne_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        if (!VerifierSelectionTexte())
-            return;
-
-        TextElement texte = (TextElement)_elementActuel!;
-        texte.Style.IsUnderline = !texte.Style.IsUnderline;
-
-        ActualiserFormatageTexte();
-    }
-
-    // ALIGNEMENT DU TEXTE
-
-    private void AppliquerAlignementTexte(string alignement)
-    {
-        if (!VerifierSelectionTexte())
-            return;
-
-        TextElement texte = (TextElement)_elementActuel!;
-
-        texte.Style.TextAlignment = alignement;
-
-        ActualiserFormatageTexte();
-    }
-
-    private void BtnAlignerGauche_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        AppliquerAlignementTexte("Left");
-    }
-
-    private void BtnCentrerTexte_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        AppliquerAlignementTexte("Center");
-    }
-
-    private void BtnAlignerDroite_Click(
-        object sender,
-        RoutedEventArgs e)
-    {
-        AppliquerAlignementTexte("Right");
-    }
-
+    // =====================================================
     // RACCOURCIS CLAVIER
+    // =====================================================
 
-    private void MainWindow_PreviewKeyDown(
-        object sender,
-        KeyEventArgs e)
+    private void MainWindow_PreviewKeyDown(object sender, KeyEventArgs e)
     {
-        bool toucheCtrl =
-            Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+        bool ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
+        bool maj = Keyboard.Modifiers.HasFlag(ModifierKeys.Shift);
 
-        if (e.Key == Key.Delete && toucheCtrl)
-        {
-            SupprimerElementSelectionne();
-            e.Handled = true;
-            return;
-        }
-
-        if (Keyboard.FocusedElement is TextBox)
-        {
-            return;
-        }
-
-        if (toucheCtrl)
+        // Raccourcis valables partout, même pendant la saisie d'un texte
+        if (ctrl)
         {
             switch (e.Key)
             {
-                case Key.C:
-                    BtnCopier_Click(this, new RoutedEventArgs());
-                    e.Handled = true;
-                    return;
-
-                case Key.X:
-                    BtnCouper_Click(this, new RoutedEventArgs());
-                    e.Handled = true;
-                    return;
-
-                case Key.V:
-                    BtnColler_Click(this, new RoutedEventArgs());
-                    e.Handled = true;
-                    return;
+                case Key.S: Enregistrer(demanderChemin: maj); e.Handled = true; return;
+                case Key.O: Ouvrir(); e.Handled = true; return;
+                case Key.N: Nouveau(); e.Handled = true; return;
+                case Key.M: _diapositives.NouvelleCommand.Execute(null); e.Handled = true; return;
+                case Key.Delete: SupprimerElement(); e.Handled = true; return;
             }
         }
 
-        if (e.Key == Key.Delete)
+        // Pendant la saisie d'un texte, les autres touches servent au texte
+        if (Keyboard.FocusedElement is TextBox)
+            return;
+
+        if (ctrl)
         {
-            SupprimerElementSelectionne();
+            switch (e.Key)
+            {
+                case Key.Z: Executer(_vm.UndoCommand); e.Handled = true; return;
+                case Key.Y: Executer(_vm.RedoCommand); e.Handled = true; return;
+                case Key.C: Copier(); e.Handled = true; return;
+                case Key.X: Couper(); e.Handled = true; return;
+                case Key.V: Coller(); e.Handled = true; return;
+            }
+        }
+
+        if (e.Key == Key.Delete && _vm.SelectedElement != null)
+        {
+            SupprimerElement();
             e.Handled = true;
         }
     }
 
-    // ACTUALISATION DU CANVAS
-
-    private void SlideCanvas_DiapositiveModifiee()
+    private static void Executer(ICommand commande)
     {
-        lstDiapositives.Items.Refresh();
-        ActualiserListeCalques();
+        if (commande.CanExecute(null))
+            commande.Execute(null);
     }
 
-    private void SlideCanvas_ElementSelectionChangee(
-        SlideElement? element)
+    // =====================================================
+    // ZOOM
+    // =====================================================
+
+    private void SliderZoom_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
     {
-        _elementActuel = element;
-
-        _actualisationEnCours = true;
-
-        bool selectionExiste = element != null;
-
-        txtPositionX.IsEnabled = selectionExiste;
-        txtPositionY.IsEnabled = selectionExiste;
-        txtLargeur.IsEnabled = selectionExiste;
-        txtHauteur.IsEnabled = selectionExiste;
-        sliderRotation.IsEnabled = selectionExiste;
-
-        if (element == null)
-        {
-            txtPositionX.Text = "0";
-            txtPositionY.Text = "0";
-            txtLargeur.Text = "100";
-            txtHauteur.Text = "50";
-            sliderRotation.Value = 0;
-            txtValeurRotation.Text = "0°";
-        }
-        else
-        {
-            txtPositionX.Text = FormaterValeur(element.X);
-            txtPositionY.Text = FormaterValeur(element.Y);
-            txtLargeur.Text = FormaterValeur(element.Width);
-            txtHauteur.Text = FormaterValeur(element.Height);
-
-            sliderRotation.Value =
-                Math.Clamp(element.Rotation, 0, 360);
-
-            txtValeurRotation.Text =
-                FormaterValeur(element.Rotation) + "°";
-        }
-
-        if (element is TextElement texte)
-            SelectionnerValeursFormatage(texte);
-
-        _actualisationEnCours = false;
-
-        ActualiserListeCalques();
-    }
-
-    private void SelectionnerValeursFormatage(TextElement texte)
-    {
-        foreach (ComboBoxItem item in cmbPolice.Items)
-        {
-            if (item.Content?.ToString() == texte.Style.FontFamily)
-            {
-                cmbPolice.SelectedItem = item;
-                break;
-            }
-        }
-
-        foreach (ComboBoxItem item in cmbTaille.Items)
-        {
-            if (double.TryParse(
-                    item.Content?.ToString(),
-                    CultureInfo.InvariantCulture,
-                    out double taille) &&
-                Math.Abs(taille - texte.Style.FontSize) < 0.01)
-            {
-                cmbTaille.SelectedItem = item;
-                break;
-            }
-        }
-
-        foreach (ComboBoxItem item in cmbCouleurTexte.Items)
-        {
-            if (string.Equals(
-                    item.Tag?.ToString(),
-                    texte.Style.TextColor,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                cmbCouleurTexte.SelectedItem = item;
-                break;
-            }
-        }
-    }
-
-    // MODIFICATION DES PROPRIETES
-
-    private void Propriete_TextChanged(
-        object sender,
-        TextChangedEventArgs e)
-    {
-        if (_actualisationEnCours || _elementActuel == null)
+        if (!IsLoaded)
             return;
 
-        if (sender is not TextBox champ)
-            return;
-
-        if (!double.TryParse(
-                champ.Text,
-                NumberStyles.Float,
-                CultureInfo.CurrentCulture,
-                out double valeur))
-            return;
-
-        if (double.IsNaN(valeur) || double.IsInfinity(valeur))
-            return;
-
-        switch (champ.Name)
-        {
-            case "txtPositionX":
-                _elementActuel.X = Math.Max(0, valeur);
-                break;
-
-            case "txtPositionY":
-                _elementActuel.Y = Math.Max(0, valeur);
-                break;
-
-            case "txtLargeur":
-                _elementActuel.Width = Math.Max(30, valeur);
-                break;
-
-            case "txtHauteur":
-                _elementActuel.Height = Math.Max(30, valeur);
-                break;
-        }
-
-        slideCanvas.ActualiserElementSelectionne();
+        // Zoom fixe : la diapositive garde sa taille et on peut faire défiler
+        double facteur = e.NewValue / 100;
+        vueDiapositive.Width = 960 * facteur;
+        vueDiapositive.Height = 540 * facteur;
+        zoneDiapositive.HorizontalScrollBarVisibility = ScrollBarVisibility.Auto;
+        zoneDiapositive.VerticalScrollBarVisibility = ScrollBarVisibility.Auto;
+        txtZoom.Text = $"{e.NewValue:0} %";
     }
 
-    // ROTATION
-
-    private void SliderRotation_ValueChanged(
-        object sender,
-        RoutedPropertyChangedEventArgs<double> e)
+    // Mode « Ajuster » : la diapositive prend toute la place disponible
+    private void BtnAjuster_Click(object sender, RoutedEventArgs e)
     {
-        if (_actualisationEnCours || _elementActuel == null)
-            return;
-
-        _elementActuel.Rotation = e.NewValue;
-
-        txtValeurRotation.Text =
-            FormaterValeur(e.NewValue) + "°";
-
-        slideCanvas.ActualiserElementSelectionne();
+        vueDiapositive.Width = double.NaN;
+        vueDiapositive.Height = double.NaN;
+        zoneDiapositive.HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled;
+        zoneDiapositive.VerticalScrollBarVisibility = ScrollBarVisibility.Disabled;
+        txtZoom.Text = "Ajusté";
     }
 
-    private string FormaterValeur(double valeur)
-    {
-        return valeur.ToString(
-            "0.##",
-            CultureInfo.CurrentCulture);
-    }
+    // =====================================================
+    // BOÎTES DE DIALOGUE
+    // =====================================================
+
+    private bool Confirmer(string question)
+        => MessageBox.Show(this, question, "Confirmation",
+                           MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
+
+    private void Informer(string message, string titre)
+        => MessageBox.Show(this, message, titre, MessageBoxButton.OK, MessageBoxImage.Information);
+
+    private void Erreur(string message)
+        => MessageBox.Show(this, message, "Erreur", MessageBoxButton.OK, MessageBoxImage.Error);
 }
