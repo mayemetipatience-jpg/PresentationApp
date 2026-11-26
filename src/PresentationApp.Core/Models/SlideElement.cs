@@ -9,6 +9,7 @@ namespace PresentationApp.Core.Models;
 [JsonDerivedType(typeof(ShapeElement), "shape")]
 [JsonDerivedType(typeof(ImageElement), "image")]
 [JsonDerivedType(typeof(TableElement), "table")]
+[JsonDerivedType(typeof(ChartElement), "chart")]
 public abstract class SlideElement
 {
     // Identifiant unique de l'élément.

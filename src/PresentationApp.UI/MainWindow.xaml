@@ -11,7 +11,6 @@
         WindowStartupLocation="CenterScreen"
         Background="#F3F5F2">
 
-
 	<Window.Resources>
 
 		<!-- PALETTE -->
@@ -241,6 +240,37 @@
 			</Border>
 		</DataTemplate>
 
+		<!-- MINIATURE : GRAPHIQUE -->
+		<DataTemplate DataType="{x:Type models:ChartElement}">
+			<Border Width="{Binding Width}"
+                    Height="{Binding Height}"
+                    Background="White"
+                    BorderBrush="#4472C4"
+                    BorderThickness="1"
+                    ClipToBounds="True"
+                    RenderTransformOrigin="0.5,0.5">
+
+				<Border.RenderTransform>
+					<RotateTransform Angle="{Binding Rotation}"/>
+				</Border.RenderTransform>
+
+				<StackPanel Margin="4">
+					<TextBlock Text="{Binding Title}"
+                               FontSize="9"
+                               FontWeight="Bold"
+                               Foreground="#123B46"
+                               HorizontalAlignment="Center"
+                               TextTrimming="CharacterEllipsis"/>
+
+					<TextBlock Text="Graphique"
+                               FontSize="8"
+                               Foreground="#4472C4"
+                               HorizontalAlignment="Center"
+                               VerticalAlignment="Center"/>
+				</StackPanel>
+			</Border>
+		</DataTemplate>
+
 	</Window.Resources>
 
 	<!-- GRILLE PRINCIPALE -->
@@ -263,10 +293,10 @@
 				</Grid.ColumnDefinitions>
 
 				<Border Width="30" Height="30"
-										Background="#20B5A5"
-										CornerRadius="7"
-										VerticalAlignment="Center"
-										Margin="3,0,12,0">
+                        Background="#20B5A5"
+                        CornerRadius="7"
+                        VerticalAlignment="Center"
+                        Margin="3,0,12,0">
 					<TextBlock Text="P"
                                Foreground="White"
                                FontSize="20"
@@ -276,18 +306,18 @@
 				</Border>
 
 				<TextBlock Grid.Column="1"
-										   Text="Mini PowerPoint | Présentation sans titre"
-										   Foreground="White"
-										   FontSize="14"
-										   FontWeight="SemiBold"
-										   VerticalAlignment="Center"/>
+                           Text="Mini PowerPoint | Présentation sans titre"
+                           Foreground="White"
+                           FontSize="14"
+                           FontWeight="SemiBold"
+                           VerticalAlignment="Center"/>
 
 				<Button Grid.Column="2"
-										Content="Partager"
-										Background="#20B5A5"
-										Foreground="White"
-										BorderThickness="0"
-										FontWeight="SemiBold"/>
+                        Content="Partager"
+                        Background="#20B5A5"
+                        Foreground="White"
+                        BorderThickness="0"
+                        FontWeight="SemiBold"/>
 			</Grid>
 		</Border>
 
@@ -329,8 +359,8 @@
 					<StackPanel Orientation="Horizontal" Margin="5,5">
 
 						<GroupBox Header="Presse-papiers"
-														  Style="{StaticResource RibbonGroup}"
-														  Width="190">
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="190">
 							<Grid>
 								<Grid.ColumnDefinitions>
 									<ColumnDefinition Width="*"/>
@@ -348,8 +378,8 @@
 						</GroupBox>
 
 						<GroupBox Header="Mise en forme du texte"
-														  Style="{StaticResource RibbonGroup}"
-														  Width="450">
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="450">
 							<StackPanel>
 								<StackPanel Orientation="Horizontal"
                                             HorizontalAlignment="Center">
@@ -370,12 +400,12 @@
 									</ComboBox>
 
 									<ComboBox x:Name="cmbTaille"
-																				  Width="65"
-																				  Height="30"
-																				  Margin="3"
-																				  SelectedIndex="3"
-																				  SelectionChanged="CmbTaille_SelectionChanged"
-																				  ToolTip="Taille du texte">
+                                              Width="65"
+                                              Height="30"
+                                              Margin="3"
+                                              SelectedIndex="3"
+                                              SelectionChanged="CmbTaille_SelectionChanged"
+                                              ToolTip="Taille du texte">
 										<ComboBoxItem Content="8"/>
 										<ComboBoxItem Content="10"/>
 										<ComboBoxItem Content="12"/>
@@ -391,12 +421,12 @@
 									</ComboBox>
 
 									<ComboBox x:Name="cmbCouleurTexte"
-																				  Width="125"
-																				  Height="30"
-																				  Margin="3"
-																				  SelectedIndex="0"
-																				  SelectionChanged="CmbCouleurTexte_SelectionChanged"
-																				  ToolTip="Couleur du texte">
+                                              Width="125"
+                                              Height="30"
+                                              Margin="3"
+                                              SelectedIndex="0"
+                                              SelectionChanged="CmbCouleurTexte_SelectionChanged"
+                                              ToolTip="Couleur du texte">
 										<ComboBoxItem Content="Noir" Tag="#000000"/>
 										<ComboBoxItem Content="Blanc" Tag="#FFFFFF"/>
 										<ComboBoxItem Content="Rouge" Tag="#FF0000"/>
@@ -446,8 +476,8 @@
 						</GroupBox>
 
 						<GroupBox Header="Diapositives"
-														  Style="{StaticResource RibbonGroup}"
-														  Width="180">
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="180">
 							<StackPanel>
 								<Button Content="Ajouter une diapositive"
                                         Height="38"
@@ -459,8 +489,8 @@
 						</GroupBox>
 
 						<GroupBox Header="Modification"
-														  Style="{StaticResource RibbonGroup}"
-														  Width="225">
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="225">
 							<WrapPanel HorizontalAlignment="Center">
 								<Button Content="Rotation" Click="BtnRotation_Click"/>
 								<Button Content="Supprimer" Click="BtnSupprimerElement_Click"/>
@@ -472,8 +502,8 @@
 						</GroupBox>
 
 						<GroupBox Header="Ordre des calques"
-														  Style="{StaticResource RibbonGroup}"
-														  Width="250">
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="250">
 							<WrapPanel HorizontalAlignment="Center">
 								<Button Content="Premier plan" Click="BtnPremierPlan_Click"/>
 								<Button Content="Arrière-plan" Click="BtnArrierePlanCalque_Click"/>
@@ -494,8 +524,8 @@
 					<StackPanel Orientation="Horizontal" Margin="5,5">
 
 						<GroupBox Header="Texte"
-														  Style="{StaticResource RibbonGroup}"
-														  Width="150">
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="150">
 							<Button Content="Zone de texte"
                                     Height="55"
                                     Background="#E5F4F1"
@@ -504,8 +534,8 @@
 						</GroupBox>
 
 						<GroupBox Header="Formes"
-														  Style="{StaticResource RibbonGroup}"
-														  Width="240">
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="240">
 							<StackPanel>
 								<TextBlock Text="Choisir une forme"
                                            Foreground="#668087"
@@ -545,8 +575,8 @@
 						</GroupBox>
 
 						<GroupBox Header="Tableaux"
-														  Style="{StaticResource RibbonGroup}"
-														  Width="270">
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="270">
 							<StackPanel>
 								<Grid>
 									<Grid.ColumnDefinitions>
@@ -618,13 +648,13 @@
 								</Grid>
 
 								<Button Content="Insérer un tableau"
-																		Height="38"
-																		Margin="5,8,5,2"
-																		Background="#20B5A5"
-																		Foreground="White"
-																		FontWeight="SemiBold"
-																		BorderThickness="0"
-																		Click="BtnInsererTableau_Click"/>
+                                        Height="38"
+                                        Margin="5,8,5,2"
+                                        Background="#20B5A5"
+                                        Foreground="White"
+                                        FontWeight="SemiBold"
+                                        BorderThickness="0"
+                                        Click="BtnInsererTableau_Click"/>
 							</StackPanel>
 						</GroupBox>
 
@@ -654,12 +684,24 @@
 							</Grid>
 						</GroupBox>
 
+						<!-- IMAGES -->
 						<GroupBox Header="Images"
-														  Style="{StaticResource RibbonGroup}"
-														  Width="150">
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="150">
 							<Button Content="Insérer une image"
                                     Height="55"
                                     Click="BtnImage_Click"/>
+						</GroupBox>
+
+						<!-- GRAPHIQUES -->
+						<GroupBox Header="Graphiques"
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="160">
+							<Button Content="Insérer un graphique"
+                                    Height="55"
+                                    Background="#E5F4F1"
+                                    FontWeight="SemiBold"
+                                    Click="BtnGraphique_Click"/>
 						</GroupBox>
 
 					</StackPanel>
@@ -696,8 +738,8 @@
 						</GroupBox>
 
 						<GroupBox Header="Arrière-plan"
-														  Style="{StaticResource RibbonGroup}"
-														  Width="190">
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="190">
 							<Button Content="Modifier l'arrière-plan"
                                     Height="55"
                                     Click="BtnArrierePlan_Click"/>
@@ -712,20 +754,20 @@
 					<StackPanel Margin="15">
 
 						<TextBlock Text="TRANSITIONS DE DIAPOSITIVE"
-														   FontSize="18"
-														   FontWeight="Bold"
-														   Foreground="#123B46"
-														   Margin="0,0,0,15"/>
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="#123B46"
+                                   Margin="0,0,0,15"/>
 
 						<TextBlock Text="Effet de transition"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,0,0,5"/>
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,0,0,5"/>
 
 						<ComboBox x:Name="cmbTransitions"
-														  SelectedIndex="0"
-														  Height="32"
-														  Margin="0,0,0,15">
+                                  SelectedIndex="0"
+                                  Height="32"
+                                  Margin="0,0,0,15">
 							<ComboBoxItem Content="Aucune" Tag="None"/>
 							<ComboBoxItem Content="Fade" Tag="Fade"/>
 							<ComboBoxItem Content="Wipe" Tag="Wipe"/>
@@ -738,32 +780,32 @@
 						</ComboBox>
 
 						<TextBlock Text="Durée de la transition"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,0,0,5"/>
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,0,0,5"/>
 
 						<Slider x:Name="sliderDureeTransition"
-														Minimum="100"
-														Maximum="5000"
-														Value="500"
-														TickFrequency="100"
-														IsSnapToTickEnabled="False"/>
+                                Minimum="100"
+                                Maximum="5000"
+                                Value="500"
+                                TickFrequency="100"
+                                IsSnapToTickEnabled="False"/>
 
 						<TextBlock x:Name="txtDureeTransition"
-														   Text="500 ms"
-														   HorizontalAlignment="Right"
-														   Foreground="#668087"
-														   Margin="0,0,0,15"/>
+                                   Text="500 ms"
+                                   HorizontalAlignment="Right"
+                                   Foreground="#668087"
+                                   Margin="0,0,0,15"/>
 
 						<TextBlock Text="Direction"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,0,0,5"/>
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,0,0,5"/>
 
 						<ComboBox x:Name="cmbDirectionTransition"
-														  SelectedIndex="0"
-														  Height="32"
-														  Margin="0,0,0,15">
+                                  SelectedIndex="0"
+                                  Height="32"
+                                  Margin="0,0,0,15">
 							<ComboBoxItem Content="Left" Tag="Left"/>
 							<ComboBoxItem Content="Right" Tag="Right"/>
 							<ComboBoxItem Content="Top" Tag="Top"/>
@@ -773,14 +815,14 @@
 						<Separator Margin="0,10"/>
 
 						<TextBlock Text="Application"
-														   FontSize="15"
-														   FontWeight="Bold"
-														   Foreground="#123B46"
-														   Margin="0,5,0,10"/>
+                                   FontSize="15"
+                                   FontWeight="Bold"
+                                   Foreground="#123B46"
+                                   Margin="0,5,0,10"/>
 
 						<TextBlock Text="Sélectionnez un effet, sa durée et sa direction. Ces paramètres concernent la diapositive actuelle."
-														   TextWrapping="Wrap"
-														   Foreground="#668087"/>
+                                   TextWrapping="Wrap"
+                                   Foreground="#668087"/>
 
 					</StackPanel>
 				</ScrollViewer>
@@ -792,20 +834,20 @@
 					<StackPanel Margin="15">
 
 						<TextBlock Text="ANIMATIONS DES ÉLÉMENTS"
-														   FontSize="18"
-														   FontWeight="Bold"
-														   Foreground="#123B46"
-														   Margin="0,0,0,15"/>
+                                   FontSize="18"
+                                   FontWeight="Bold"
+                                   Foreground="#123B46"
+                                   Margin="0,0,0,15"/>
 
 						<TextBlock Text="Type d'animation"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,0,0,5"/>
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,0,0,5"/>
 
 						<ComboBox x:Name="cmbAnimations"
-														  SelectedIndex="0"
-														  Height="32"
-														  Margin="0,0,0,15">
+                                  SelectedIndex="0"
+                                  Height="32"
+                                  Margin="0,0,0,15">
 							<ComboBoxItem Content="Aucune" Tag="None"/>
 							<ComboBoxItem Content="Appear" Tag="Appear"/>
 							<ComboBoxItem Content="FlyIn" Tag="FlyIn"/>
@@ -818,41 +860,41 @@
 						</ComboBox>
 
 						<TextBlock Text="Durée de l'animation"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,0,0,5"/>
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,0,0,5"/>
 
 						<Slider x:Name="sliderDureeAnimation"
-														Minimum="100"
-														Maximum="5000"
-														Value="1000"
-														TickFrequency="100"/>
+                                Minimum="100"
+                                Maximum="5000"
+                                Value="1000"
+                                TickFrequency="100"/>
 
 						<TextBlock x:Name="txtDureeAnimation"
-														   Text="1000 ms"
-														   HorizontalAlignment="Right"
-														   Foreground="#668087"
-														   Margin="0,0,0,15"/>
+                                   Text="1000 ms"
+                                   HorizontalAlignment="Right"
+                                   Foreground="#668087"
+                                   Margin="0,0,0,15"/>
 
 						<TextBlock Text="Délai avant démarrage (ms)"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,0,0,5"/>
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,0,0,5"/>
 
 						<TextBox x:Name="txtDelaiAnimation"
-														 Text="0"
-														 Padding="5"
-														 Margin="0,0,0,15"/>
+                                 Text="0"
+                                 Padding="5"
+                                 Margin="0,0,0,15"/>
 
 						<TextBlock Text="Direction"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,0,0,5"/>
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,0,0,5"/>
 
 						<ComboBox x:Name="cmbDirectionAnimation"
-														  SelectedIndex="0"
-														  Height="32"
-														  Margin="0,0,0,15">
+                                  SelectedIndex="0"
+                                  Height="32"
+                                  Margin="0,0,0,15">
 							<ComboBoxItem Content="Left" Tag="Left"/>
 							<ComboBoxItem Content="Right" Tag="Right"/>
 							<ComboBoxItem Content="Top" Tag="Top"/>
@@ -860,14 +902,14 @@
 						</ComboBox>
 
 						<TextBlock Text="Nombre de répétitions"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,0,0,5"/>
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,0,0,5"/>
 
 						<ComboBox x:Name="cmbRepetitionsAnimation"
-														  SelectedIndex="0"
-														  Height="32"
-														  Margin="0,0,0,15">
+                                  SelectedIndex="0"
+                                  Height="32"
+                                  Margin="0,0,0,15">
 							<ComboBoxItem Content="1" Tag="1"/>
 							<ComboBoxItem Content="2" Tag="2"/>
 							<ComboBoxItem Content="3" Tag="3"/>
@@ -878,14 +920,14 @@
 						<Separator Margin="0,10"/>
 
 						<TextBlock Text="Application"
-														   FontSize="15"
-														   FontWeight="Bold"
-														   Foreground="#123B46"
-														   Margin="0,5,0,10"/>
+                                   FontSize="15"
+                                   FontWeight="Bold"
+                                   Foreground="#123B46"
+                                   Margin="0,5,0,10"/>
 
 						<TextBlock Text="Sélectionnez un élément sur la diapositive pour définir son animation."
-														   TextWrapping="Wrap"
-														   Foreground="#668087"/>
+                                   TextWrapping="Wrap"
+                                   Foreground="#668087"/>
 
 					</StackPanel>
 				</ScrollViewer>
@@ -893,51 +935,69 @@
 
 			<!-- DIAPORAMA -->
 			<TabItem Header="Diaporama">
-                <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="20" MaxWidth="760">
-                        <TextBlock Text="Présenter le diaporama"
-                                   FontSize="20"
-                                   FontWeight="Bold"
-                                   Foreground="#123B46"
-                                   Margin="5,5,5,12"/>
-                        <TextBlock Text="Lancez la présentation en plein écran. Les transitions et les animations configurées seront exécutées automatiquement."
-                                   TextWrapping="Wrap"
-                                   Foreground="#668087"
-                                   Margin="5,0,5,18"/>
-                        <Button Content="▶  Démarrer depuis le début"
-                                Height="44" Margin="5,5"
-                                HorizontalAlignment="Left" MinWidth="250"
-                                Click="BtnDemarrerDiaporama_Click"/>
-                        <Button Content="▶  Démarrer depuis la diapositive sélectionnée"
-                                Height="44" Margin="5,5"
-                                HorizontalAlignment="Left" MinWidth="330"
-                                Click="BtnDemarrerDepuisSelection_Click"/>
-                        <Separator Margin="5,18"/>
-                        <TextBlock Text="Navigation pendant la présentation"
-                                   FontSize="15" FontWeight="SemiBold"
-                                   Foreground="#123B46" Margin="5,5,5,10"/>
-                        <TextBlock Text="→ / Espace / Entrée : diapositive suivante&#10;← / Retour arrière : diapositive précédente&#10;Échap : quitter le diaporama&#10;Clic sur la diapositive : avancer"
-                                   TextWrapping="Wrap" LineHeight="25"
-                                   Foreground="#45636A" Margin="5"/>
-                        <TextBlock Text="Les animations sont lancées dans l'ordre des calques. Le délai, la durée, la direction et les répétitions sont lus depuis les propriétés de chaque élément."
-                                   TextWrapping="Wrap" Foreground="#668087"
-                                   Margin="5,18,5,5"/>
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
+				<ScrollViewer HorizontalScrollBarVisibility="Auto"
+                              VerticalScrollBarVisibility="Disabled"
+                              VerticalContentAlignment="Center">
+					<StackPanel Orientation="Horizontal" Margin="5,5">
 
-			<!-- AFFICHAGE -->
-			<TabItem Header="Affichage">
-				<StackPanel Margin="20">
-					<TextBlock Text="Options d'affichage"
-                               FontSize="16"
-                               FontWeight="SemiBold"
-                               Foreground="#123B46"
-                               Margin="5"/>
-					<TextBlock Text="Les commandes d'affichage seront ajoutées dans cet espace."
-                               Foreground="#668087"
-                               Margin="5"/>
-				</StackPanel>
+						<GroupBox Header="Lancement"
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="390">
+							<StackPanel Orientation="Horizontal"
+                                        VerticalAlignment="Center">
+								<Button Content="▶ Depuis le début"
+                                        Width="175"
+                                        Height="65"
+                                        Margin="5"
+                                        Background="#20B5A5"
+                                        Foreground="White"
+                                        FontWeight="SemiBold"
+                                        BorderThickness="0"
+                                        Click="BtnDemarrerDiaporama_Click"/>
+								<Button Content="▶ Depuis la sélection"
+                                        Width="185"
+                                        Height="65"
+                                        Margin="5"
+                                        Click="BtnDemarrerDepuisSelection_Click"/>
+							</StackPanel>
+						</GroupBox>
+
+						<GroupBox Header="Navigation"
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="270">
+							<StackPanel Margin="5"
+                                        VerticalAlignment="Center">
+								<TextBlock Text="→  Espace / Entrée : Suivante"
+                                           Margin="2,3"
+                                           Foreground="#45636A"/>
+								<TextBlock Text="←  Retour arrière : Précédente"
+                                           Margin="2,3"
+                                           Foreground="#45636A"/>
+								<TextBlock Text="Échap : Quitter"
+                                           Margin="2,3"
+                                           Foreground="#45636A"/>
+							</StackPanel>
+						</GroupBox>
+
+						<GroupBox Header="Présentation"
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="350">
+							<StackPanel Margin="8"
+                                        VerticalAlignment="Center">
+								<TextBlock Text="Mode plein écran"
+                                           FontWeight="SemiBold"
+                                           Foreground="#123B46"
+                                           Margin="2,3"/>
+								<TextBlock Text="Les transitions et animations configurées seront exécutées pendant la présentation."
+                                           TextWrapping="Wrap"
+                                           Foreground="#668087"
+                                           Width="310"
+                                           Margin="2,3"/>
+							</StackPanel>
+						</GroupBox>
+
+					</StackPanel>
+				</ScrollViewer>
 			</TabItem>
 
 		</TabControl>
@@ -958,26 +1018,26 @@
 				<DockPanel Margin="10">
 
 					<TextBlock Text="Diapositives"
-												   FontSize="14"
-												   FontWeight="SemiBold"
-												   Foreground="#123B46"
-												   Margin="5,5,5,12"
-												   DockPanel.Dock="Top"/>
+                               FontSize="14"
+                               FontWeight="SemiBold"
+                               Foreground="#123B46"
+                               Margin="5,5,5,12"
+                               DockPanel.Dock="Top"/>
 
 					<Button Content="+ Nouvelle diapositive"
-												DockPanel.Dock="Bottom"
-												HorizontalAlignment="Stretch"
-												Margin="2,8,2,2"
-												Background="#20B5A5"
-												Foreground="White"
-												BorderThickness="0"
-												FontWeight="SemiBold"
-												Click="BtnNouvelleDiapositive_Click"/>
+                            DockPanel.Dock="Bottom"
+                            HorizontalAlignment="Stretch"
+                            Margin="2,8,2,2"
+                            Background="#20B5A5"
+                            Foreground="White"
+                            BorderThickness="0"
+                            FontWeight="SemiBold"
+                            Click="BtnNouvelleDiapositive_Click"/>
 
 					<ListBox x:Name="lstDiapositives"
-												 Background="Transparent"
-												 BorderThickness="0"
-												 ScrollViewer.VerticalScrollBarVisibility="Auto">
+                             Background="Transparent"
+                             BorderThickness="0"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto">
 
 						<ListBox.ItemContainerStyle>
 							<Style TargetType="{x:Type ListBoxItem}">
@@ -1023,10 +1083,10 @@
 									</Border>
 
 									<TextBlock Text="{Binding Order, StringFormat=Diapositive {0}}"
-																				   HorizontalAlignment="Center"
-																				   FontSize="12"
-																				   Margin="0,4,0,0"
-																				   Foreground="#45636A"/>
+                                               HorizontalAlignment="Center"
+                                               FontSize="12"
+                                               Margin="0,4,0,0"
+                                               Foreground="#45636A"/>
 								</StackPanel>
 							</DataTemplate>
 						</ListBox.ItemTemplate>
@@ -1064,15 +1124,15 @@
 					<StackPanel Margin="12">
 
 						<TextBlock Text="Format de l'élément"
-														   FontSize="14"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,5,0,12"/>
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,5,0,12"/>
 
 						<TextBlock Text="Position"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,5"/>
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,5"/>
 
 						<Grid Margin="0,5">
 							<Grid.ColumnDefinitions>
@@ -1102,9 +1162,9 @@
 						<Separator Margin="0,12" Background="#DCE4E2"/>
 
 						<TextBlock Text="Dimensions"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,5"/>
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,5"/>
 
 						<Grid Margin="0,5">
 							<Grid.ColumnDefinitions>
@@ -1134,56 +1194,56 @@
 						<Separator Margin="0,12" Background="#DCE4E2"/>
 
 						<TextBlock Text="Apparence"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,5"/>
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,5"/>
 
 						<TextBlock Text="Couleur de remplissage"
-														   Foreground="#668087"
-														   Margin="2,8,2,3"/>
+                                   Foreground="#668087"
+                                   Margin="2,8,2,3"/>
 
 						<Button Content="Choisir une couleur"
-														Click="BtnCouleurRemplissage_Click"
-														Padding="5"
-														ToolTip="Modifier la couleur de la forme sélectionnée"/>
+                                Click="BtnCouleurRemplissage_Click"
+                                Padding="5"
+                                ToolTip="Modifier la couleur de la forme sélectionnée"/>
 
 						<TextBlock Text="Rotation"
-														   Foreground="#668087"
-														   Margin="2,12,2,3"/>
+                                   Foreground="#668087"
+                                   Margin="2,12,2,3"/>
 
 						<Slider x:Name="sliderRotation"
-														Minimum="0"
-														Maximum="360"
-														Value="0"
-														IsEnabled="False"
-														ValueChanged="SliderRotation_ValueChanged"/>
+                                Minimum="0"
+                                Maximum="360"
+                                Value="0"
+                                IsEnabled="False"
+                                ValueChanged="SliderRotation_ValueChanged"/>
 
 						<TextBlock x:Name="txtValeurRotation"
-														   Text="0°"
-														   Foreground="#123B46"
-														   HorizontalAlignment="Center"
-														   Margin="2,5"/>
+                                   Text="0°"
+                                   Foreground="#123B46"
+                                   HorizontalAlignment="Center"
+                                   Margin="2,5"/>
 
 						<Separator Margin="0,15" Background="#DCE4E2"/>
 
 						<TextBlock Text="Calques de la diapositive"
-														   FontSize="14"
-														   FontWeight="SemiBold"
-														   Foreground="#123B46"
-														   Margin="0,5,0,8"/>
+                                   FontSize="14"
+                                   FontWeight="SemiBold"
+                                   Foreground="#123B46"
+                                   Margin="0,5,0,8"/>
 
 						<TextBlock Text="Sélectionnez un élément dans la liste :"
-														   FontSize="11"
-														   Foreground="#668087"
-														   Margin="2,0,2,5"/>
+                                   FontSize="11"
+                                   Foreground="#668087"
+                                   Margin="2,0,2,5"/>
 
 						<ListBox x:Name="lstCalques"
-														 Height="190"
-														 Background="White"
-														 BorderBrush="#DCE4E2"
-														 BorderThickness="1"
-														 SelectionMode="Single"
-														 ScrollViewer.VerticalScrollBarVisibility="Auto">
+                                 Height="190"
+                                 Background="White"
+                                 BorderBrush="#DCE4E2"
+                                 BorderThickness="1"
+                                 SelectionMode="Single"
+                                 ScrollViewer.VerticalScrollBarVisibility="Auto">
 
 							<ListBox.ItemContainerStyle>
 								<Style TargetType="{x:Type ListBoxItem}">
@@ -1211,10 +1271,10 @@
 						</ListBox>
 
 						<TextBlock Text="Utilisez les boutons du ruban pour modifier l'ordre des calques."
-														   TextWrapping="Wrap"
-														   FontSize="10"
-														   Foreground="#668087"
-														   Margin="2,6,2,5"/>
+                                   TextWrapping="Wrap"
+                                   FontSize="10"
+                                   Foreground="#668087"
+                                   Margin="2,6,2,5"/>
 
 					</StackPanel>
 				</ScrollViewer>
@@ -1233,13 +1293,13 @@
 				</Grid.ColumnDefinitions>
 
 				<TextBlock Text="Mini PowerPoint"
-										   FontSize="11"
-										   Foreground="#668087"
-										   VerticalAlignment="Center"/>
+                           FontSize="11"
+                           Foreground="#668087"
+                           VerticalAlignment="Center"/>
 
 				<StackPanel Grid.Column="1"
-											Orientation="Horizontal"
-											VerticalAlignment="Center">
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center">
 					<TextBlock Text="Zoom"
                                FontSize="11"
                                Foreground="#45636A"
