@@ -465,8 +465,8 @@ namespace PresentationApp.UI.Canvas
 
                 SelectionnerElement(element, visual);
 
-                // Un clic dans une cellule permet de saisir du texte.
-                // Il ne doit pas déclencher le déplacement du tableau.
+                // La saisie dans une cellule ne déclenche pas
+                // le déplacement du tableau.
                 if (element is TableElement &&
                     e.OriginalSource is TextBox)
                 {
@@ -621,6 +621,45 @@ namespace PresentationApp.UI.Canvas
 
             if (_elementSelectionne.IsLocked)
                 return;
+
+            // Reconstruction du visuel du tableau
+            // après modification de ses dimensions.
+            if (_elementSelectionne is TableElement tableau)
+            {
+                FrameworkElement ancienVisuel = _visuelSelectionne;
+
+                FrameworkElement nouveauVisuel =
+                    CreerVisuelTableau(tableau);
+
+                nouveauVisuel.Tag = tableau;
+
+                nouveauVisuel.RenderTransformOrigin =
+                    new Point(0.5, 0.5);
+
+                nouveauVisuel.RenderTransform =
+                    new RotateTransform(tableau.Rotation);
+
+                SetLeft(nouveauVisuel, tableau.X);
+                SetTop(nouveauVisuel, tableau.Y);
+                SetZIndex(nouveauVisuel, tableau.ZIndex);
+
+                AjouterEvenementsSelection(
+                    nouveauVisuel,
+                    tableau);
+
+                Children.Remove(ancienVisuel);
+                Children.Add(nouveauVisuel);
+
+                _visuelSelectionne = nouveauVisuel;
+
+                ActualiserCadreSelection();
+
+                ElementSelectionChangee?.Invoke(tableau);
+
+                NotifierModification();
+
+                return;
+            }
 
             _visuelSelectionne.Width =
                 _elementSelectionne.Width;
@@ -962,20 +1001,30 @@ namespace PresentationApp.UI.Canvas
         private FrameworkElement CreerVisuelTableau(
             TableElement tableau)
         {
-            tableau.Rows = Math.Max(1, tableau.Rows);
-            tableau.Columns = Math.Max(1, tableau.Columns);
+            tableau.Rows = Math.Clamp(tableau.Rows, 1, 20);
+            tableau.Columns = Math.Clamp(tableau.Columns, 1, 20);
 
             tableau.InitialiserCellules();
+
+            double largeur = Math.Max(
+                TailleMinimum,
+                tableau.Width);
+
+            double hauteur = Math.Max(
+                TailleMinimum,
+                tableau.Height);
+
+            const double epaisseurBordure = 6;
 
             var grille = new Grid
             {
                 Width = Math.Max(
-                    TailleMinimum,
-                    tableau.Width),
+                    1,
+                    largeur - epaisseurBordure * 2),
 
                 Height = Math.Max(
-                    TailleMinimum,
-                    tableau.Height),
+                    1,
+                    hauteur - epaisseurBordure * 2),
 
                 Background = Brushes.Transparent,
                 ClipToBounds = true
@@ -1059,10 +1108,15 @@ namespace PresentationApp.UI.Canvas
 
                     cellule.TextChanged += (sender, e) =>
                     {
-                        tableau.Cells[ligneActuelle][colonneActuelle] =
-                            cellule.Text;
+                        if (ligneActuelle < tableau.Cells.Count &&
+                            colonneActuelle <
+                            tableau.Cells[ligneActuelle].Count)
+                        {
+                            tableau.Cells[ligneActuelle][colonneActuelle] =
+                                cellule.Text;
 
-                        NotifierModification();
+                            NotifierModification();
+                        }
                     };
 
                     Grid.SetRow(cellule, ligne);
@@ -1072,7 +1126,20 @@ namespace PresentationApp.UI.Canvas
                 }
             }
 
-            return grille;
+            var bordure = new Border
+            {
+                Width = largeur,
+                Height = hauteur,
+
+                Background = Brushes.Transparent,
+
+                BorderBrush = Brushes.Gray,
+                BorderThickness = new Thickness(epaisseurBordure),
+
+                Child = grille
+            };
+
+            return bordure;
         }
 
         private Brush ConvertirCouleur(

@@ -627,6 +627,32 @@
 							</StackPanel>
 						</GroupBox>
 
+						<!-- NOUVEAU GROUPE : MODIFICATION DU TABLEAU -->
+						<GroupBox Header="Modification du tableau"
+                                  Style="{StaticResource RibbonGroup}"
+                                  Width="260">
+							<Grid>
+								<Grid.ColumnDefinitions>
+									<ColumnDefinition Width="*"/>
+									<ColumnDefinition Width="*"/>
+								</Grid.ColumnDefinitions>
+
+								<StackPanel Grid.Column="0">
+									<Button Content="+ Ajouter une ligne"
+                                            Click="BtnAjouterLigneTableau_Click"/>
+									<Button Content="- Supprimer une ligne"
+                                            Click="BtnSupprimerLigneTableau_Click"/>
+								</StackPanel>
+
+								<StackPanel Grid.Column="1">
+									<Button Content="+ Ajouter une colonne"
+                                            Click="BtnAjouterColonneTableau_Click"/>
+									<Button Content="- Supprimer une colonne"
+                                            Click="BtnSupprimerColonneTableau_Click"/>
+								</StackPanel>
+							</Grid>
+						</GroupBox>
+
 						<GroupBox Header="Images"
                                   Style="{StaticResource RibbonGroup}"
                                   Width="150">

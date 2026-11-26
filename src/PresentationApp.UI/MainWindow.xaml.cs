@@ -110,6 +110,9 @@ public partial class MainWindow : Window
         lstDiapositives.SelectionChanged +=
             LstDiapositives_SelectionChanged;
 
+        lstCalques.SelectionChanged +=
+            LstCalques_SelectionChanged;
+
         lstDiapositives.SelectedIndex = 0;
     }
 
@@ -131,7 +134,6 @@ public partial class MainWindow : Window
             BackgroundColor = theme.BackgroundColor
         };
 
-        // Zone de titre.
         diapositive.Elements.Add(new TextElement
         {
             X = 100,
@@ -149,7 +151,6 @@ public partial class MainWindow : Window
             }
         });
 
-        // Zone de sous-titre.
         diapositive.Elements.Add(new TextElement
         {
             X = 100,
@@ -215,7 +216,6 @@ public partial class MainWindow : Window
         object sender,
         RoutedEventArgs e)
     {
-        // Vérifier qu'une diapositive est sélectionnée.
         if (lstDiapositives.SelectedItem is not Slide slide)
         {
             MessageBox.Show(
@@ -227,7 +227,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Récupérer le nombre de lignes.
         if (cmbLignesTableau.SelectedItem is not ComboBoxItem itemLignes ||
             !int.TryParse(
                 itemLignes.Content?.ToString(),
@@ -244,7 +243,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Récupérer le nombre de colonnes.
         if (cmbColonnesTableau.SelectedItem is not ComboBoxItem itemColonnes ||
             !int.TryParse(
                 itemColonnes.Content?.ToString(),
@@ -261,7 +259,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Vérifier les dimensions.
         if (lignes < 1 || lignes > 20 ||
             colonnes < 1 || colonnes > 20)
         {
@@ -274,7 +271,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        // Activer le mode d'insertion du tableau.
         slideCanvas.ActiverInsertionTableau(
             slide,
             lignes,
@@ -285,6 +281,132 @@ public partial class MainWindow : Window
             "Insertion d'un tableau",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
+    }
+
+    // MODIFICATION DES LIGNES ET COLONNES DU TABLEAU
+
+    private void ModifierTableauSelectionne(
+        Action<TableElement> modification)
+    {
+        SlideElement? element =
+            slideCanvas.ElementSelectionne ?? _elementActuel;
+
+        if (element == null)
+        {
+            MessageBox.Show(
+                "Sélectionnez d'abord un tableau sur la diapositive.",
+                "Modification du tableau",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            return;
+        }
+
+        if (element.IsLocked)
+        {
+            AfficherMessageElementVerrouille();
+            return;
+        }
+
+        if (element is not TableElement tableau)
+        {
+            MessageBox.Show(
+                "L'élément sélectionné n'est pas un tableau.",
+                "Modification du tableau",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            return;
+        }
+
+        modification(tableau);
+
+        slideCanvas.ActualiserElementSelectionne();
+
+        lstDiapositives.Items.Refresh();
+
+        ActualiserListeCalques();
+
+        SlideCanvas_ElementSelectionChangee(tableau);
+    }
+
+    // AJOUTER UNE LIGNE
+
+    private void BtnAjouterLigneTableau_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ModifierTableauSelectionne(tableau =>
+        {
+            tableau.InitialiserCellules();
+
+            tableau.Cells.Add(
+                Enumerable.Range(0, tableau.Columns)
+                    .Select(_ => string.Empty)
+                    .ToList());
+
+            tableau.Rows++;
+        });
+    }
+
+    // SUPPRIMER UNE LIGNE
+
+    private void BtnSupprimerLigneTableau_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ModifierTableauSelectionne(tableau =>
+        {
+            tableau.InitialiserCellules();
+
+            if (tableau.Rows <= 1)
+                return;
+
+            tableau.Cells.RemoveAt(tableau.Rows - 1);
+
+            tableau.Rows--;
+        });
+    }
+
+    // AJOUTER UNE COLONNE
+
+    private void BtnAjouterColonneTableau_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ModifierTableauSelectionne(tableau =>
+        {
+            tableau.InitialiserCellules();
+
+            foreach (List<string> ligne in tableau.Cells)
+            {
+                ligne.Add(string.Empty);
+            }
+
+            tableau.Columns++;
+        });
+    }
+
+    // SUPPRIMER UNE COLONNE
+
+    private void BtnSupprimerColonneTableau_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ModifierTableauSelectionne(tableau =>
+        {
+            tableau.InitialiserCellules();
+
+            if (tableau.Columns <= 1)
+                return;
+
+            foreach (List<string> ligne in tableau.Cells)
+            {
+                ligne.RemoveAt(tableau.Columns - 1);
+            }
+
+            tableau.Columns--;
+        });
     }
 
     // INSERTION DES FORMES
