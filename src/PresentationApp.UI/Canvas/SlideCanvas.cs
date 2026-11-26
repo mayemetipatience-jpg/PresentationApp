@@ -622,8 +622,7 @@ namespace PresentationApp.UI.Canvas
             if (_elementSelectionne.IsLocked)
                 return;
 
-            // Reconstruction du visuel du tableau
-            // après modification de ses dimensions.
+            // Reconstruction du visuel du tableau.
             if (_elementSelectionne is TableElement tableau)
             {
                 FrameworkElement ancienVisuel = _visuelSelectionne;
@@ -655,6 +654,44 @@ namespace PresentationApp.UI.Canvas
                 ActualiserCadreSelection();
 
                 ElementSelectionChangee?.Invoke(tableau);
+
+                NotifierModification();
+
+                return;
+            }
+
+            // Reconstruction du visuel du graphique.
+            if (_elementSelectionne is ChartElement graphique)
+            {
+                FrameworkElement ancienVisuel = _visuelSelectionne;
+
+                FrameworkElement nouveauVisuel =
+                    ChartVisualBuilder.Creer(graphique);
+
+                nouveauVisuel.Tag = graphique;
+
+                nouveauVisuel.RenderTransformOrigin =
+                    new Point(0.5, 0.5);
+
+                nouveauVisuel.RenderTransform =
+                    new RotateTransform(graphique.Rotation);
+
+                SetLeft(nouveauVisuel, graphique.X);
+                SetTop(nouveauVisuel, graphique.Y);
+                SetZIndex(nouveauVisuel, graphique.ZIndex);
+
+                AjouterEvenementsSelection(
+                    nouveauVisuel,
+                    graphique);
+
+                Children.Remove(ancienVisuel);
+                Children.Add(nouveauVisuel);
+
+                _visuelSelectionne = nouveauVisuel;
+
+                ActualiserCadreSelection();
+
+                ElementSelectionChangee?.Invoke(graphique);
 
                 NotifierModification();
 
@@ -990,6 +1027,9 @@ namespace PresentationApp.UI.Canvas
 
             if (element is TableElement table)
                 return CreerVisuelTableau(table);
+
+            if (element is ChartElement chart)
+                return ChartVisualBuilder.Creer(chart);
 
             return null;
         }

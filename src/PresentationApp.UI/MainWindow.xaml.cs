@@ -2095,4 +2095,39 @@ public partial class MainWindow : Window
             "0.##",
             CultureInfo.CurrentCulture);
     }
+    // INSÉRER UN GRAPHIQUE
+    private void BtnGraphique_Click(object sender, RoutedEventArgs e)
+    {
+        if (lstDiapositives.SelectedItem is not Slide diapositive)
+        {
+            MessageBox.Show(
+                "Sélectionnez d'abord une diapositive.",
+                "Insertion d'un graphique",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            return;
+        }
+
+        ChartElement graphique = new()
+        {
+            X = 250,
+            Y = 120,
+            Width = 460,
+            Height = 300,
+
+            ChartType = ChartType.Column,
+            Title = "Mon graphique",
+
+            HorizontalAxisTitle = "Catégories",
+            VerticalAxisTitle = "Valeurs"
+        };
+
+        diapositive.Elements.Add(graphique);
+
+        slideCanvas.DisplaySlide(diapositive);
+
+        lstDiapositives.Items.Refresh();
+        ActualiserListeCalques();
+    }
 }
