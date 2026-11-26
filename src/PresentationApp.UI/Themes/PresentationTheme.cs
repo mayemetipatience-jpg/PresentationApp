@@ -11,6 +11,13 @@ public class PresentationTheme
     public string SecondaryColor { get; set; } = "#DDEBF7";
     public string FontFamily { get; set; } = "Segoe UI";
 
+    // Le thème qui porte ce nom, ou "Moderne bleu" s'il n'existe pas
+    public static PresentationTheme Trouver(string? nom)
+    {
+        List<PresentationTheme> themes = GetThemes();
+        return themes.FirstOrDefault(t => t.Name == nom) ?? themes[0];
+    }
+
     public static List<PresentationTheme> GetThemes()
     {
         return new List<PresentationTheme>

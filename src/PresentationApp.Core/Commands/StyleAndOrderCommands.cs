@@ -31,7 +31,8 @@ public class ChangeStyleCommand : IUndoableCommand
         FontSize = s.FontSize,
         IsBold = s.IsBold,
         IsItalic = s.IsItalic,
-        IsUnderline = s.IsUnderline
+        IsUnderline = s.IsUnderline,
+        TextAlignment = s.TextAlignment
     };
 }
 

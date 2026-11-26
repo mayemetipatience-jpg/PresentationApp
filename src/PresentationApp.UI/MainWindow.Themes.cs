@@ -1,93 +1,69 @@
-﻿
-using System;
-using System.Linq;
-using System.Windows;
-using System.Windows.Controls;
+﻿using PresentationApp.Core.Commands;
 using PresentationApp.Core.Models;
+using PresentationApp.UI.Services;
 using PresentationApp.UI.Themes;
+using PresentationApp.UI.ViewModels;
 
 namespace PresentationApp.UI;
 
+// Thèmes de présentation (onglet « Création »).
+// Un thème change le fond des diapositives et la police / couleur des titres et sous-titres.
+// Les fonds personnalisés et les textes déjà modifiés par l'utilisateur ne sont pas touchés.
 public partial class MainWindow
 {
-    private void CmbThemes_SelectionChanged(
-        object sender,
-        SelectionChangedEventArgs e)
-    {
-        if (cmbThemes.SelectedItem is not ComboBoxItem item)
-            return;
-
-        string? nomTheme = item.Content?.ToString();
-
-        if (string.IsNullOrWhiteSpace(nomTheme))
-            return;
-
-        AppliquerTheme(nomTheme);
-    }
-
     private void AppliquerTheme(string nomTheme)
     {
-        PresentationTheme? nouveauTheme = PresentationTheme
-            .GetThemes()
-            .FirstOrDefault(t => t.Name == nomTheme);
-
-        if (nouveauTheme == null)
-        {
-            MessageBox.Show(
-                "Le thème sélectionné est introuvable.",
-                "Thèmes",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
-
+        Presentation presentation = _vm.CurrentPresentation;
+        if (nomTheme == presentation.ThemeName)
             return;
-        }
 
-        PresentationTheme? ancienTheme = PresentationTheme
-            .GetThemes()
-            .FirstOrDefault(t => t.Name == _presentation.ThemeName);
+        // On garde l'état actuel pour pouvoir annuler (Ctrl+Z)
+        string ancienNom = presentation.ThemeName;
+        var fonds = presentation.Slides.ToDictionary(s => s, s => s.BackgroundColor);
+        var styles = presentation.Slides.SelectMany(s => s.Elements).OfType<TextElement>()
+                                        .ToDictionary(t => t, t => ChangeStyleCommand.Copy(t.Style));
 
-        foreach (Slide slide in _presentation.Slides)
+        _vm.History.Execute(new ActionAnnulable($"Thème « {nomTheme} »",
+            faire: () => AppliquerThemeSurPresentation(presentation, nomTheme),
+            defaire: () =>
+            {
+                presentation.ThemeName = ancienNom;
+                foreach (var (diapositive, couleur) in fonds)
+                    diapositive.BackgroundColor = couleur;
+                foreach (var (texte, style) in styles)
+                    texte.Style = ChangeStyleCommand.Copy(style);
+            }));
+    }
+
+    private static void AppliquerThemeSurPresentation(Presentation presentation, string nomTheme)
+    {
+        PresentationTheme ancien = PresentationTheme.Trouver(presentation.ThemeName);
+        PresentationTheme nouveau = PresentationTheme.Trouver(nomTheme);
+
+        foreach (Slide diapositive in presentation.Slides)
         {
-            // Ne remplacer que les fonds correspondant
-            // à l'ancien thème. Les fonds personnalisés restent intacts.
-            if (ancienTheme != null &&
-                string.Equals(
-                    slide.BackgroundColor,
-                    ancienTheme.BackgroundColor,
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                slide.BackgroundColor = nouveauTheme.BackgroundColor;
-            }
+            // Seuls les fonds de l'ancien thème changent
+            if (string.Equals(diapositive.BackgroundColor, ancien.BackgroundColor, StringComparison.OrdinalIgnoreCase))
+                diapositive.BackgroundColor = nouveau.BackgroundColor;
 
-            foreach (SlideElement element in slide.Elements)
+            foreach (TextElement texte in diapositive.Elements.OfType<TextElement>())
             {
-                if (element is not TextElement texte)
-                    continue;
-
-                if (texte.Text == "Cliquez pour ajouter un titre")
+                if (texte.Text == SlideListViewModel.TexteTitre)
                 {
-                    texte.Style.FontFamily = nouveauTheme.FontFamily;
-                    texte.Style.TextColor = nouveauTheme.TitleColor;
+                    texte.Style.FontFamily = nouveau.FontFamily;
+                    texte.Style.TextColor = nouveau.TitleColor;
                     texte.Style.FontSize = 32;
                     texte.Style.IsBold = true;
                 }
-                else if (texte.Text == "Cliquez pour ajouter un sous-titre")
+                else if (texte.Text == SlideListViewModel.TexteSousTitre)
                 {
-                    texte.Style.FontFamily = nouveauTheme.FontFamily;
-                    texte.Style.TextColor = nouveauTheme.TextColor;
+                    texte.Style.FontFamily = nouveau.FontFamily;
+                    texte.Style.TextColor = nouveau.TextColor;
                     texte.Style.FontSize = 20;
                 }
             }
         }
 
-        _presentation.ThemeName = nouveauTheme.Name;
-
-        if (lstDiapositives.SelectedItem is Slide diapositive)
-        {
-            slideCanvas.DisplaySlide(diapositive);
-        }
-
-        lstDiapositives.Items.Refresh();
-        ActualiserListeCalques();
+        presentation.ThemeName = nouveau.Name;
     }
 }

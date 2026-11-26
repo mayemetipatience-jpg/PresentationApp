@@ -1,53 +1,28 @@
-﻿using System;
-using System.Linq;
-using System.Windows;
+﻿using System.Windows;
 using PresentationApp.Core.Models;
 using PresentationApp.UI.Slideshow;
 
 namespace PresentationApp.UI;
 
+// Lancement du diaporama en plein écran (fenêtre SlideshowWindow de l'Étudiant 2).
+// Les transitions et animations réglées dans le ruban sont jouées automatiquement.
 public partial class MainWindow
 {
-    private void BtnDemarrerDiaporama_Click(object sender, RoutedEventArgs e)
+    private void DemarrerDiaporama(bool depuisSelection)
     {
-        DemarrerDiaporama(0);
-    }
+        List<Slide> diapositives = _vm.Slides.ToList();
 
-    private void BtnDemarrerDepuisSelection_Click(object sender, RoutedEventArgs e)
-    {
-        int index = lstDiapositives.SelectedIndex;
-        if (index < 0)
+        if (diapositives.Count == 0)
         {
-            MessageBox.Show(
-                "Sélectionnez d'abord une diapositive.",
-                "Diaporama",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            Informer("La présentation ne contient aucune diapositive.", "Diaporama");
             return;
         }
 
-        DemarrerDiaporama(index);
-    }
+        int depart = depuisSelection && _vm.SelectedSlide != null
+            ? Math.Max(0, diapositives.IndexOf(_vm.SelectedSlide))
+            : 0;
 
-    private void DemarrerDiaporama(int indexDepart)
-    {
-        if (_presentation.Slides.Count == 0)
-        {
-            MessageBox.Show(
-                "La présentation ne contient aucune diapositive.",
-                "Diaporama",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
-            return;
-        }
-
-        // Réorganise les diapositives suivant leur ordre dans la liste de l'éditeur.
-        var slides = _presentation.Slides.ToList();
-        var fenetre = new SlideshowWindow(slides, indexDepart)
-        {
-            Owner = this
-        };
-
+        var fenetre = new SlideshowWindow(diapositives, depart) { Owner = this };
         fenetre.ShowDialog();
     }
 }
