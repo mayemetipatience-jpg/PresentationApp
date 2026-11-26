@@ -117,13 +117,10 @@ public partial class MainWindow : Window
 
     private Slide CreerDiapositive(int ordre)
     {
-        // Récupérer le thème actuellement sélectionné.
         PresentationTheme? theme = PresentationTheme
             .GetThemes()
             .FirstOrDefault(t => t.Name == _presentation.ThemeName);
 
-        // Utiliser le thème Moderne bleu si le thème enregistré
-        // est introuvable.
         theme ??= PresentationTheme
             .GetThemes()
             .First(t => t.Name == "Moderne bleu");
@@ -210,6 +207,84 @@ public partial class MainWindow : Window
     {
         if (lstDiapositives.SelectedItem is Slide slide)
             slideCanvas.ActiverInsertionTexte(slide);
+    }
+
+    // INSERTION D'UN TABLEAU
+
+    private void BtnInsererTableau_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        // Vérifier qu'une diapositive est sélectionnée.
+        if (lstDiapositives.SelectedItem is not Slide slide)
+        {
+            MessageBox.Show(
+                "Sélectionnez d'abord une diapositive.",
+                "Insertion d'un tableau",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            return;
+        }
+
+        // Récupérer le nombre de lignes.
+        if (cmbLignesTableau.SelectedItem is not ComboBoxItem itemLignes ||
+            !int.TryParse(
+                itemLignes.Content?.ToString(),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int lignes))
+        {
+            MessageBox.Show(
+                "Veuillez choisir un nombre de lignes valide.",
+                "Insertion d'un tableau",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+        // Récupérer le nombre de colonnes.
+        if (cmbColonnesTableau.SelectedItem is not ComboBoxItem itemColonnes ||
+            !int.TryParse(
+                itemColonnes.Content?.ToString(),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int colonnes))
+        {
+            MessageBox.Show(
+                "Veuillez choisir un nombre de colonnes valide.",
+                "Insertion d'un tableau",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+        // Vérifier les dimensions.
+        if (lignes < 1 || lignes > 20 ||
+            colonnes < 1 || colonnes > 20)
+        {
+            MessageBox.Show(
+                "Le tableau doit contenir entre 1 et 20 lignes et colonnes.",
+                "Insertion d'un tableau",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+        // Activer le mode d'insertion du tableau.
+        slideCanvas.ActiverInsertionTableau(
+            slide,
+            lignes,
+            colonnes);
+
+        MessageBox.Show(
+            $"Tableau de {lignes} ligne(s) et {colonnes} colonne(s) prêt.\n\nCliquez sur la diapositive pour le placer.",
+            "Insertion d'un tableau",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
     }
 
     // INSERTION DES FORMES
@@ -549,6 +624,24 @@ public partial class MainWindow : Window
                 ImagePath = image.ImagePath
             };
         }
+        else if (element is TableElement tableau)
+        {
+            TableElement copieTableau = new()
+            {
+                Rows = tableau.Rows,
+                Columns = tableau.Columns,
+                CellBackgroundColor = tableau.CellBackgroundColor,
+                HeaderBackgroundColor = tableau.HeaderBackgroundColor,
+                BorderColor = tableau.BorderColor,
+                BorderThickness = tableau.BorderThickness,
+                CellFontSize = tableau.CellFontSize,
+                Cells = tableau.Cells
+                    .Select(ligne => ligne.ToList())
+                    .ToList()
+            };
+
+            copie = copieTableau;
+        }
         else
         {
             throw new NotSupportedException(
@@ -763,6 +856,10 @@ public partial class MainWindow : Window
                 else if (element is ImageElement)
                 {
                     nom = "Image";
+                }
+                else if (element is TableElement tableau)
+                {
+                    nom = $"Tableau : {tableau.Rows} x {tableau.Columns}";
                 }
                 else
                 {

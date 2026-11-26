@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.Text.Json.Serialization;
 
 namespace PresentationApp.Core.Models;
@@ -8,6 +7,7 @@ namespace PresentationApp.Core.Models;
 [JsonDerivedType(typeof(TextElement), "text")]
 [JsonDerivedType(typeof(ShapeElement), "shape")]
 [JsonDerivedType(typeof(ImageElement), "image")]
+[JsonDerivedType(typeof(TableElement), "table")]
 public abstract class SlideElement
 {
     public Guid Id { get; set; } = Guid.NewGuid();
@@ -22,7 +22,7 @@ public abstract class SlideElement
 
     public int ZIndex { get; set; }
 
-    // Indique si l'élément est verrouillé
+    // Indique si l'élément est verrouillé.
     public bool IsLocked { get; set; } = false;
 
     public ElementStyle Style { get; set; } = new();
