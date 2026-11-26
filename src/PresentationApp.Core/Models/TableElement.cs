@@ -1,4 +1,8 @@
-﻿namespace PresentationApp.Core.Models;
+﻿
+using System.Collections.Generic;
+using System.Linq;
+
+namespace PresentationApp.Core.Models;
 
 public class TableElement : SlideElement
 {
@@ -25,6 +29,9 @@ public class TableElement : SlideElement
 
     public void InitialiserCellules()
     {
+        Rows = System.Math.Max(1, Rows);
+        Columns = System.Math.Max(1, Columns);
+
         while (Cells.Count < Rows)
         {
             Cells.Add(
@@ -44,5 +51,68 @@ public class TableElement : SlideElement
             while (ligne.Count > Columns)
                 ligne.RemoveAt(ligne.Count - 1);
         }
+    }
+
+    // Ajouter une ligne
+    public void AjouterLigne(int index = -1)
+    {
+        InitialiserCellules();
+
+        if (index < 0 || index > Rows)
+            index = Rows;
+
+        List<string> nouvelleLigne =
+            Enumerable.Range(0, Columns)
+                .Select(_ => string.Empty)
+                .ToList();
+
+        Cells.Insert(index, nouvelleLigne);
+        Rows++;
+    }
+
+    // Supprimer une ligne
+    public void SupprimerLigne(int index = -1)
+    {
+        InitialiserCellules();
+
+        if (Rows <= 1)
+            return;
+
+        if (index < 0 || index >= Rows)
+            index = Rows - 1;
+
+        Cells.RemoveAt(index);
+        Rows--;
+    }
+
+    // Ajouter une colonne
+    public void AjouterColonne(int index = -1)
+    {
+        InitialiserCellules();
+
+        if (index < 0 || index > Columns)
+            index = Columns;
+
+        foreach (List<string> ligne in Cells)
+            ligne.Insert(index, string.Empty);
+
+        Columns++;
+    }
+
+    // Supprimer une colonne
+    public void SupprimerColonne(int index = -1)
+    {
+        InitialiserCellules();
+
+        if (Columns <= 1)
+            return;
+
+        if (index < 0 || index >= Columns)
+            index = Columns - 1;
+
+        foreach (List<string> ligne in Cells)
+            ligne.RemoveAt(index);
+
+        Columns--;
     }
 }
