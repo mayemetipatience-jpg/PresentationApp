@@ -1,4 +1,5 @@
-﻿using System;
+﻿
+using System;
 using System.IO;
 using System.Collections.Generic;
 using System.Linq;
@@ -17,7 +18,12 @@ namespace PresentationApp.UI.Canvas
     {
         private Slide? _slidePourInsertion;
         private Slide? _diapositiveAffichee;
+
         private bool _modeInsertionTexte;
+        private bool _modeInsertionTableau;
+
+        private int _nombreLignesTableau = 3;
+        private int _nombreColonnesTableau = 3;
 
         private SlideElement? _elementSelectionne;
         private FrameworkElement? _visuelSelectionne;
@@ -207,9 +213,34 @@ namespace PresentationApp.UI.Canvas
         public void ActiverInsertionTexte(Slide slide)
         {
             _slidePourInsertion = slide;
+
             _modeInsertionTexte = true;
+            _modeInsertionTableau = false;
 
             Cursor = Cursors.Cross;
+
+            DeselectionnerElement();
+        }
+
+        // =====================================================
+        // INSERTION DE TABLEAU
+        // =====================================================
+
+        public void ActiverInsertionTableau(
+            Slide slide,
+            int lignes = 3,
+            int colonnes = 3)
+        {
+            _slidePourInsertion = slide;
+
+            _modeInsertionTexte = false;
+            _modeInsertionTableau = true;
+
+            _nombreLignesTableau = Math.Clamp(lignes, 1, 20);
+            _nombreColonnesTableau = Math.Clamp(colonnes, 1, 20);
+
+            Cursor = Cursors.Cross;
+
             DeselectionnerElement();
         }
 
@@ -217,7 +248,77 @@ namespace PresentationApp.UI.Canvas
             object sender,
             MouseButtonEventArgs e)
         {
-            if (_modeInsertionTexte && _slidePourInsertion != null)
+            // -------------------------------------------------
+            // INSERTION D'UN TABLEAU
+            // -------------------------------------------------
+
+            if (_modeInsertionTableau &&
+                _slidePourInsertion != null)
+            {
+                if (e.OriginalSource != this)
+                    return;
+
+                Point position = e.GetPosition(this);
+
+                var nouveauTableau = new TableElement
+                {
+                    X = position.X,
+                    Y = position.Y,
+                    Width = 500,
+                    Height = 250,
+
+                    Rows = _nombreLignesTableau,
+                    Columns = _nombreColonnesTableau,
+
+                    ZIndex = _slidePourInsertion.Elements
+                        .Select(element => element.ZIndex)
+                        .DefaultIfEmpty(0)
+                        .Max() + 1
+                };
+
+                nouveauTableau.InitialiserCellules();
+
+                _slidePourInsertion.Elements.Add(nouveauTableau);
+
+                FrameworkElement? visuel =
+                    CreateVisual(nouveauTableau);
+
+                if (visuel != null)
+                {
+                    SetLeft(visuel, nouveauTableau.X);
+                    SetTop(visuel, nouveauTableau.Y);
+                    SetZIndex(visuel, nouveauTableau.ZIndex);
+
+                    visuel.Tag = nouveauTableau;
+
+                    AjouterEvenementsSelection(
+                        visuel,
+                        nouveauTableau);
+
+                    Children.Add(visuel);
+
+                    SelectionnerElement(
+                        nouveauTableau,
+                        visuel);
+                }
+
+                _modeInsertionTableau = false;
+                _slidePourInsertion = null;
+
+                Cursor = Cursors.Arrow;
+
+                NotifierModification();
+
+                e.Handled = true;
+                return;
+            }
+
+            // -------------------------------------------------
+            // INSERTION DE TEXTE
+            // -------------------------------------------------
+
+            if (_modeInsertionTexte &&
+                _slidePourInsertion != null)
             {
                 if (e.OriginalSource != this)
                     return;
@@ -235,7 +336,8 @@ namespace PresentationApp.UI.Canvas
 
                 _slidePourInsertion.Elements.Add(nouvelElement);
 
-                TextBox zoneTexte = CreerEditeurTexte(nouvelElement);
+                TextBox zoneTexte =
+                    CreerEditeurTexte(nouvelElement);
 
                 SetLeft(zoneTexte, nouvelElement.X);
                 SetTop(zoneTexte, nouvelElement.Y);
@@ -243,15 +345,20 @@ namespace PresentationApp.UI.Canvas
 
                 zoneTexte.Tag = nouvelElement;
 
-                AjouterEvenementsSelection(zoneTexte, nouvelElement);
+                AjouterEvenementsSelection(
+                    zoneTexte,
+                    nouvelElement);
 
                 Children.Add(zoneTexte);
 
                 _modeInsertionTexte = false;
                 _slidePourInsertion = null;
+
                 Cursor = Cursors.Arrow;
 
-                SelectionnerElement(nouvelElement, zoneTexte);
+                SelectionnerElement(
+                    nouvelElement,
+                    zoneTexte);
 
                 NotifierModification();
 
@@ -277,6 +384,7 @@ namespace PresentationApp.UI.Canvas
             _elementSelectionne = null;
             _visuelSelectionne = null;
             _cadreSelection = null;
+
             _poignees.Clear();
 
             _diapositiveAffichee = slide;
@@ -284,20 +392,26 @@ namespace PresentationApp.UI.Canvas
             ElementSelectionChangee?.Invoke(null);
 
             _modeInsertionTexte = false;
+            _modeInsertionTableau = false;
+
             _slidePourInsertion = null;
+
             Cursor = Cursors.Arrow;
 
             if (slide == null)
             {
                 Background = Brushes.White;
+
                 CreerCadreSelection();
+
                 return;
             }
 
             try
             {
                 var couleurConvertie =
-                    ColorConverter.ConvertFromString(slide.BackgroundColor);
+                    ColorConverter.ConvertFromString(
+                        slide.BackgroundColor);
 
                 Background = couleurConvertie is Color couleur
                     ? new SolidColorBrush(couleur)
@@ -322,7 +436,9 @@ namespace PresentationApp.UI.Canvas
 
                 visual.Tag = element;
 
-                visual.RenderTransformOrigin = new Point(0.5, 0.5);
+                visual.RenderTransformOrigin =
+                    new Point(0.5, 0.5);
+
                 visual.RenderTransform =
                     new RotateTransform(element.Rotation);
 
@@ -349,9 +465,20 @@ namespace PresentationApp.UI.Canvas
 
                 SelectionnerElement(element, visual);
 
+                // La saisie dans une cellule ne déclenche pas
+                // le déplacement du tableau.
+                if (element is TableElement &&
+                    e.OriginalSource is TextBox)
+                {
+                    _deplacementEnCours = false;
+                    return;
+                }
+
                 _positionInitiale = e.GetPosition(this);
+
                 _positionXInitiale = element.X;
                 _positionYInitiale = element.Y;
+
                 _deplacementEnCours = false;
             };
 
@@ -365,6 +492,13 @@ namespace PresentationApp.UI.Canvas
 
                 if (_elementSelectionne != element)
                     return;
+
+                // Ne pas déplacer le tableau pendant la saisie.
+                if (element is TableElement &&
+                    e.OriginalSource is TextBox)
+                {
+                    return;
+                }
 
                 Point positionActuelle = e.GetPosition(this);
 
@@ -384,10 +518,12 @@ namespace PresentationApp.UI.Canvas
                     return;
 
                 element.X = Math.Max(
-                    0, _positionXInitiale + differenceX);
+                    0,
+                    _positionXInitiale + differenceX);
 
                 element.Y = Math.Max(
-                    0, _positionYInitiale + differenceY);
+                    0,
+                    _positionYInitiale + differenceY);
 
                 SetLeft(visual, element.X);
                 SetTop(visual, element.Y);
@@ -395,6 +531,7 @@ namespace PresentationApp.UI.Canvas
                 ActualiserCadreSelection();
 
                 ElementSelectionChangee?.Invoke(element);
+
                 NotifierModification();
             };
 
@@ -434,7 +571,8 @@ namespace PresentationApp.UI.Canvas
         // SELECTION DEPUIS LA LISTE DES CALQUES
         // =====================================================
 
-        public void SelectionnerElementDepuisListe(SlideElement element)
+        public void SelectionnerElementDepuisListe(
+            SlideElement element)
         {
             if (element == null)
                 return;
@@ -484,17 +622,65 @@ namespace PresentationApp.UI.Canvas
             if (_elementSelectionne.IsLocked)
                 return;
 
-            _visuelSelectionne.Width = _elementSelectionne.Width;
-            _visuelSelectionne.Height = _elementSelectionne.Height;
+            // Reconstruction du visuel du tableau
+            // après modification de ses dimensions.
+            if (_elementSelectionne is TableElement tableau)
+            {
+                FrameworkElement ancienVisuel = _visuelSelectionne;
 
-            SetLeft(_visuelSelectionne, _elementSelectionne.X);
-            SetTop(_visuelSelectionne, _elementSelectionne.Y);
+                FrameworkElement nouveauVisuel =
+                    CreerVisuelTableau(tableau);
+
+                nouveauVisuel.Tag = tableau;
+
+                nouveauVisuel.RenderTransformOrigin =
+                    new Point(0.5, 0.5);
+
+                nouveauVisuel.RenderTransform =
+                    new RotateTransform(tableau.Rotation);
+
+                SetLeft(nouveauVisuel, tableau.X);
+                SetTop(nouveauVisuel, tableau.Y);
+                SetZIndex(nouveauVisuel, tableau.ZIndex);
+
+                AjouterEvenementsSelection(
+                    nouveauVisuel,
+                    tableau);
+
+                Children.Remove(ancienVisuel);
+                Children.Add(nouveauVisuel);
+
+                _visuelSelectionne = nouveauVisuel;
+
+                ActualiserCadreSelection();
+
+                ElementSelectionChangee?.Invoke(tableau);
+
+                NotifierModification();
+
+                return;
+            }
+
+            _visuelSelectionne.Width =
+                _elementSelectionne.Width;
+
+            _visuelSelectionne.Height =
+                _elementSelectionne.Height;
+
+            SetLeft(
+                _visuelSelectionne,
+                _elementSelectionne.X);
+
+            SetTop(
+                _visuelSelectionne,
+                _elementSelectionne.Y);
 
             _visuelSelectionne.RenderTransformOrigin =
                 new Point(0.5, 0.5);
 
             _visuelSelectionne.RenderTransform =
-                new RotateTransform(_elementSelectionne.Rotation);
+                new RotateTransform(
+                    _elementSelectionne.Rotation);
 
             if (_elementSelectionne is TextElement texte &&
                 _visuelSelectionne is TextBox zoneTexte)
@@ -520,10 +706,12 @@ namespace PresentationApp.UI.Canvas
             }
 
             ActualiserCadreSelection();
+
             NotifierModification();
         }
 
-        private TextAlignment ConvertirAlignement(string? alignement)
+        private TextAlignment ConvertirAlignement(
+            string? alignement)
         {
             if (Enum.TryParse(
                     alignement,
@@ -540,13 +728,16 @@ namespace PresentationApp.UI.Canvas
             TextElement element,
             TextBox zoneTexte)
         {
-            ElementStyle style = element.Style ?? new ElementStyle();
+            ElementStyle style =
+                element.Style ?? new ElementStyle();
 
             bool estTitre =
-                element.Height >= 80 && element.Width >= 700;
+                element.Height >= 80 &&
+                element.Width >= 700;
 
             bool estSousTitre =
-                element.Height < 80 && element.Width >= 700;
+                element.Height < 80 &&
+                element.Width >= 700;
 
             bool estPlaceholder =
                 zoneTexte.Text == TexteTitre ||
@@ -570,7 +761,8 @@ namespace PresentationApp.UI.Canvas
             }
             catch
             {
-                zoneTexte.FontFamily = new FontFamily("Segoe UI");
+                zoneTexte.FontFamily =
+                    new FontFamily("Segoe UI");
             }
 
             zoneTexte.FontSize = taillePolice;
@@ -611,6 +803,7 @@ namespace PresentationApp.UI.Canvas
 
             double x = _elementSelectionne.X;
             double y = _elementSelectionne.Y;
+
             double largeur = _elementSelectionne.Width;
             double hauteur = _elementSelectionne.Height;
 
@@ -623,18 +816,23 @@ namespace PresentationApp.UI.Canvas
             _cadreSelection.Visibility = Visibility.Visible;
 
             PositionnerPoignee(
-                0, x - TaillePoignee / 2, y - TaillePoignee / 2);
-
-            PositionnerPoignee(
-                1, x + largeur - TaillePoignee / 2,
+                0,
+                x - TaillePoignee / 2,
                 y - TaillePoignee / 2);
 
             PositionnerPoignee(
-                2, x - TaillePoignee / 2,
+                1,
+                x + largeur - TaillePoignee / 2,
+                y - TaillePoignee / 2);
+
+            PositionnerPoignee(
+                2,
+                x - TaillePoignee / 2,
                 y + hauteur - TaillePoignee / 2);
 
             PositionnerPoignee(
-                3, x + largeur - TaillePoignee / 2,
+                3,
+                x + largeur - TaillePoignee / 2,
                 y + hauteur - TaillePoignee / 2);
 
             foreach (Thumb poignee in _poignees)
@@ -646,7 +844,10 @@ namespace PresentationApp.UI.Canvas
             }
         }
 
-        private void PositionnerPoignee(int index, double x, double y)
+        private void PositionnerPoignee(
+            int index,
+            double x,
+            double y)
         {
             if (index >= _poignees.Count)
                 return;
@@ -671,11 +872,13 @@ namespace PresentationApp.UI.Canvas
 
             double x = _elementSelectionne.X;
             double y = _elementSelectionne.Y;
+
             double largeur = _elementSelectionne.Width;
             double hauteur = _elementSelectionne.Height;
 
             double nouveauX = x;
             double nouveauY = y;
+
             double nouvelleLargeur = largeur;
             double nouvelleHauteur = hauteur;
 
@@ -683,10 +886,12 @@ namespace PresentationApp.UI.Canvas
             {
                 case "HautGauche":
                     nouvelleLargeur = Math.Max(
-                        TailleMinimum, largeur - e.HorizontalChange);
+                        TailleMinimum,
+                        largeur - e.HorizontalChange);
 
                     nouvelleHauteur = Math.Max(
-                        TailleMinimum, hauteur - e.VerticalChange);
+                        TailleMinimum,
+                        hauteur - e.VerticalChange);
 
                     nouveauX = x + largeur - nouvelleLargeur;
                     nouveauY = y + hauteur - nouvelleHauteur;
@@ -694,30 +899,36 @@ namespace PresentationApp.UI.Canvas
 
                 case "HautDroit":
                     nouvelleLargeur = Math.Max(
-                        TailleMinimum, largeur + e.HorizontalChange);
+                        TailleMinimum,
+                        largeur + e.HorizontalChange);
 
                     nouvelleHauteur = Math.Max(
-                        TailleMinimum, hauteur - e.VerticalChange);
+                        TailleMinimum,
+                        hauteur - e.VerticalChange);
 
                     nouveauY = y + hauteur - nouvelleHauteur;
                     break;
 
                 case "BasGauche":
                     nouvelleLargeur = Math.Max(
-                        TailleMinimum, largeur - e.HorizontalChange);
+                        TailleMinimum,
+                        largeur - e.HorizontalChange);
 
                     nouvelleHauteur = Math.Max(
-                        TailleMinimum, hauteur + e.VerticalChange);
+                        TailleMinimum,
+                        hauteur + e.VerticalChange);
 
                     nouveauX = x + largeur - nouvelleLargeur;
                     break;
 
                 case "BasDroit":
                     nouvelleLargeur = Math.Max(
-                        TailleMinimum, largeur + e.HorizontalChange);
+                        TailleMinimum,
+                        largeur + e.HorizontalChange);
 
                     nouvelleHauteur = Math.Max(
-                        TailleMinimum, hauteur + e.VerticalChange);
+                        TailleMinimum,
+                        hauteur + e.VerticalChange);
                     break;
             }
 
@@ -734,13 +945,16 @@ namespace PresentationApp.UI.Canvas
             }
 
             nouvelleLargeur = Math.Max(
-                TailleMinimum, nouvelleLargeur);
+                TailleMinimum,
+                nouvelleLargeur);
 
             nouvelleHauteur = Math.Max(
-                TailleMinimum, nouvelleHauteur);
+                TailleMinimum,
+                nouvelleHauteur);
 
             _elementSelectionne.X = nouveauX;
             _elementSelectionne.Y = nouveauY;
+
             _elementSelectionne.Width = nouvelleLargeur;
             _elementSelectionne.Height = nouvelleHauteur;
 
@@ -752,7 +966,9 @@ namespace PresentationApp.UI.Canvas
 
             ActualiserCadreSelection();
 
-            ElementSelectionChangee?.Invoke(_elementSelectionne);
+            ElementSelectionChangee?.Invoke(
+                _elementSelectionne);
+
             NotifierModification();
         }
 
@@ -760,7 +976,8 @@ namespace PresentationApp.UI.Canvas
         // CREATION DES ELEMENTS VISUELS
         // =====================================================
 
-        private FrameworkElement? CreateVisual(SlideElement element)
+        private FrameworkElement? CreateVisual(
+            SlideElement element)
         {
             if (element is TextElement text)
                 return CreerEditeurTexte(text);
@@ -771,7 +988,158 @@ namespace PresentationApp.UI.Canvas
             if (element is ImageElement image)
                 return CreateImage(image);
 
+            if (element is TableElement table)
+                return CreerVisuelTableau(table);
+
             return null;
+        }
+
+        // =====================================================
+        // CREATION DU VISUEL DU TABLEAU
+        // =====================================================
+
+        private FrameworkElement CreerVisuelTableau(
+            TableElement tableau)
+        {
+            tableau.Rows = Math.Clamp(tableau.Rows, 1, 20);
+            tableau.Columns = Math.Clamp(tableau.Columns, 1, 20);
+
+            tableau.InitialiserCellules();
+
+            double largeur = Math.Max(
+                TailleMinimum,
+                tableau.Width);
+
+            double hauteur = Math.Max(
+                TailleMinimum,
+                tableau.Height);
+
+            const double epaisseurBordure = 6;
+
+            var grille = new Grid
+            {
+                Width = Math.Max(
+                    1,
+                    largeur - epaisseurBordure * 2),
+
+                Height = Math.Max(
+                    1,
+                    hauteur - epaisseurBordure * 2),
+
+                Background = Brushes.Transparent,
+                ClipToBounds = true
+            };
+
+            for (int colonne = 0;
+                 colonne < tableau.Columns;
+                 colonne++)
+            {
+                grille.ColumnDefinitions.Add(
+                    new ColumnDefinition
+                    {
+                        Width = new GridLength(
+                            1,
+                            GridUnitType.Star)
+                    });
+            }
+
+            for (int ligne = 0;
+                 ligne < tableau.Rows;
+                 ligne++)
+            {
+                grille.RowDefinitions.Add(
+                    new RowDefinition
+                    {
+                        Height = new GridLength(
+                            1,
+                            GridUnitType.Star)
+                    });
+            }
+
+            for (int ligne = 0;
+                 ligne < tableau.Rows;
+                 ligne++)
+            {
+                for (int colonne = 0;
+                     colonne < tableau.Columns;
+                     colonne++)
+                {
+                    int ligneActuelle = ligne;
+                    int colonneActuelle = colonne;
+
+                    var cellule = new TextBox
+                    {
+                        Text = tableau.Cells[ligne][colonne],
+
+                        FontSize = tableau.CellFontSize > 0
+                            ? tableau.CellFontSize
+                            : 16,
+
+                        Foreground = Brushes.Black,
+
+                        Background = ligne == 0
+                            ? ConvertirCouleur(
+                                tableau.HeaderBackgroundColor,
+                                Brushes.LightBlue)
+                            : ConvertirCouleur(
+                                tableau.CellBackgroundColor,
+                                Brushes.White),
+
+                        BorderBrush = ConvertirCouleur(
+                            tableau.BorderColor,
+                            Brushes.Gray),
+
+                        BorderThickness = new Thickness(
+                            Math.Max(
+                                0,
+                                tableau.BorderThickness)),
+
+                        Padding = new Thickness(5),
+
+                        TextWrapping = TextWrapping.Wrap,
+                        AcceptsReturn = true,
+
+                        VerticalContentAlignment =
+                            VerticalAlignment.Center,
+
+                        HorizontalContentAlignment =
+                            HorizontalAlignment.Stretch
+                    };
+
+                    cellule.TextChanged += (sender, e) =>
+                    {
+                        if (ligneActuelle < tableau.Cells.Count &&
+                            colonneActuelle <
+                            tableau.Cells[ligneActuelle].Count)
+                        {
+                            tableau.Cells[ligneActuelle][colonneActuelle] =
+                                cellule.Text;
+
+                            NotifierModification();
+                        }
+                    };
+
+                    Grid.SetRow(cellule, ligne);
+                    Grid.SetColumn(cellule, colonne);
+
+                    grille.Children.Add(cellule);
+                }
+            }
+
+            var bordure = new Border
+            {
+                Width = largeur,
+                Height = hauteur,
+
+                Background = Brushes.Transparent,
+
+                BorderBrush = Brushes.Gray,
+                BorderThickness = new Thickness(epaisseurBordure),
+
+                Child = grille
+            };
+
+            return bordure;
         }
 
         private Brush ConvertirCouleur(
@@ -786,7 +1154,8 @@ namespace PresentationApp.UI.Canvas
                         ColorConverter.ConvertFromString(couleur);
 
                     if (resultat is Color couleurConvertie)
-                        return new SolidColorBrush(couleurConvertie);
+                        return new SolidColorBrush(
+                            couleurConvertie);
                 }
             }
             catch
@@ -796,28 +1165,35 @@ namespace PresentationApp.UI.Canvas
             return couleurParDefaut;
         }
 
-        private Brush ConvertirCouleurTexte(string? couleur)
+        private Brush ConvertirCouleurTexte(
+            string? couleur)
         {
-            return ConvertirCouleur(couleur, Brushes.Black);
+            return ConvertirCouleur(
+                couleur,
+                Brushes.Black);
         }
 
         // =====================================================
         // EDITEUR DE TEXTE
         // =====================================================
 
-        private TextBox CreerEditeurTexte(TextElement element)
+        private TextBox CreerEditeurTexte(
+            TextElement element)
         {
             bool estTitre =
-                element.Height >= 80 && element.Width >= 700;
+                element.Height >= 80 &&
+                element.Width >= 700;
 
             bool estSousTitre =
-                element.Height < 80 && element.Width >= 700;
+                element.Height < 80 &&
+                element.Width >= 700;
 
             bool estPlaceholder =
                 element.Text == TexteTitre ||
                 element.Text == TexteSousTitre;
 
-            ElementStyle style = element.Style ?? new ElementStyle();
+            ElementStyle style =
+                element.Style ?? new ElementStyle();
 
             double taillePolice = style.FontSize > 0
                 ? style.FontSize
@@ -864,20 +1240,25 @@ namespace PresentationApp.UI.Canvas
 
                 Foreground = estPlaceholder
                     ? Brushes.Gray
-                    : ConvertirCouleurTexte(style.TextColor),
+                    : ConvertirCouleurTexte(
+                        style.TextColor),
 
                 Background = Brushes.Transparent,
+
                 BorderBrush = Brushes.Transparent,
                 BorderThickness = new Thickness(1),
 
                 TextWrapping = TextWrapping.Wrap,
                 AcceptsReturn = true,
 
-                VerticalContentAlignment = VerticalAlignment.Center,
+                VerticalContentAlignment =
+                    VerticalAlignment.Center,
 
-                TextAlignment = ConvertirAlignement(style.TextAlignment),
+                TextAlignment =
+                    ConvertirAlignement(style.TextAlignment),
 
-                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                VerticalScrollBarVisibility =
+                    ScrollBarVisibility.Auto,
 
                 Text = element.Text
             };
@@ -896,7 +1277,8 @@ namespace PresentationApp.UI.Canvas
                     zoneTexte.Text = string.Empty;
 
                     zoneTexte.Foreground =
-                        ConvertirCouleurTexte(element.Style?.TextColor);
+                        ConvertirCouleurTexte(
+                            element.Style?.TextColor);
                 }
 
                 zoneTexte.BorderBrush = Brushes.DodgerBlue;
@@ -918,7 +1300,8 @@ namespace PresentationApp.UI.Canvas
 
                 zoneTexte.Foreground = placeholderActuel
                     ? Brushes.Gray
-                    : ConvertirCouleurTexte(element.Style?.TextColor);
+                    : ConvertirCouleurTexte(
+                        element.Style?.TextColor);
 
                 zoneTexte.BorderBrush = Brushes.Transparent;
             };
@@ -930,7 +1313,8 @@ namespace PresentationApp.UI.Canvas
         // CREATION DES FORMES
         // =====================================================
 
-        private FrameworkElement CreateShape(ShapeElement element)
+        private FrameworkElement CreateShape(
+            ShapeElement element)
         {
             Brush remplissage =
                 ConvertirCouleur(
@@ -1026,29 +1410,43 @@ namespace PresentationApp.UI.Canvas
             {
                 case ShapeType.Diamond:
                     points = Points(
-                        (0.5, 0), (1, 0.5), (0.5, 1), (0, 0.5));
+                        (0.5, 0),
+                        (1, 0.5),
+                        (0.5, 1),
+                        (0, 0.5));
                     break;
 
                 case ShapeType.Triangle:
                     points = Points(
-                        (0.5, 0), (1, 1), (0, 1));
+                        (0.5, 0),
+                        (1, 1),
+                        (0, 1));
                     break;
 
                 case ShapeType.InvertedTriangle:
                     points = Points(
-                        (0, 0), (1, 0), (0.5, 1));
+                        (0, 0),
+                        (1, 0),
+                        (0.5, 1));
                     break;
 
                 case ShapeType.Pentagon:
                     points = Points(
-                        (0.5, 0), (1, 0.38), (0.81, 1),
-                        (0.19, 1), (0, 0.38));
+                        (0.5, 0),
+                        (1, 0.38),
+                        (0.81, 1),
+                        (0.19, 1),
+                        (0, 0.38));
                     break;
 
                 case ShapeType.Hexagon:
                     points = Points(
-                        (0.25, 0), (0.75, 0), (1, 0.5),
-                        (0.75, 1), (0.25, 1), (0, 0.5));
+                        (0.25, 0),
+                        (0.75, 0),
+                        (1, 0.5),
+                        (0.75, 1),
+                        (0.25, 1),
+                        (0, 0.5));
                     break;
 
                 case ShapeType.SemiCircle:
@@ -1058,12 +1456,18 @@ namespace PresentationApp.UI.Canvas
                 case ShapeType.Cross:
                 case ShapeType.Plus:
                     points = Points(
-                        (0.35, 0), (0.65, 0),
-                        (0.65, 0.35), (1, 0.35),
-                        (1, 0.65), (0.65, 0.65),
-                        (0.65, 1), (0.35, 1),
-                        (0.35, 0.65), (0, 0.65),
-                        (0, 0.35), (0.35, 0.35));
+                        (0.35, 0),
+                        (0.65, 0),
+                        (0.65, 0.35),
+                        (1, 0.35),
+                        (1, 0.65),
+                        (0.65, 0.65),
+                        (0.65, 1),
+                        (0.35, 1),
+                        (0.35, 0.65),
+                        (0, 0.65),
+                        (0, 0.35),
+                        (0.35, 0.35));
                     break;
 
                 case ShapeType.Star5:
@@ -1076,48 +1480,68 @@ namespace PresentationApp.UI.Canvas
 
                 case ShapeType.Arrow:
                     points = Points(
-                        (0, 0.35), (0.68, 0.35),
-                        (0.68, 0.05), (1, 0.5),
-                        (0.68, 0.95), (0.68, 0.65),
+                        (0, 0.35),
+                        (0.68, 0.35),
+                        (0.68, 0.05),
+                        (1, 0.5),
+                        (0.68, 0.95),
+                        (0.68, 0.65),
                         (0, 0.65));
                     break;
 
                 case ShapeType.ArrowLeft:
                     points = Points(
-                        (1, 0.35), (0.32, 0.35),
-                        (0.32, 0.05), (0, 0.5),
-                        (0.32, 0.95), (0.32, 0.65),
+                        (1, 0.35),
+                        (0.32, 0.35),
+                        (0.32, 0.05),
+                        (0, 0.5),
+                        (0.32, 0.95),
+                        (0.32, 0.65),
                         (1, 0.65));
                     break;
 
                 case ShapeType.ArrowUp:
                     points = Points(
-                        (0.35, 1), (0.35, 0.32),
-                        (0.05, 0.32), (0.5, 0),
-                        (0.95, 0.32), (0.65, 0.32),
+                        (0.35, 1),
+                        (0.35, 0.32),
+                        (0.05, 0.32),
+                        (0.5, 0),
+                        (0.95, 0.32),
+                        (0.65, 0.32),
                         (0.65, 1));
                     break;
 
                 case ShapeType.ArrowDown:
                     points = Points(
-                        (0.35, 0), (0.65, 0),
-                        (0.65, 0.68), (0.95, 0.68),
-                        (0.5, 1), (0.05, 0.68),
+                        (0.35, 0),
+                        (0.65, 0),
+                        (0.65, 0.68),
+                        (0.95, 0.68),
+                        (0.5, 1),
+                        (0.05, 0.68),
                         (0.35, 0.68));
                     break;
 
                 case ShapeType.DoubleArrow:
                     points = Points(
-                        (0, 0.5), (0.25, 0.05),
-                        (0.25, 0.35), (0.75, 0.35),
-                        (0.75, 0.05), (1, 0.5),
-                        (0.75, 0.95), (0.75, 0.65),
-                        (0.25, 0.65), (0.25, 0.95));
+                        (0, 0.5),
+                        (0.25, 0.05),
+                        (0.25, 0.35),
+                        (0.75, 0.35),
+                        (0.75, 0.05),
+                        (1, 0.5),
+                        (0.75, 0.95),
+                        (0.75, 0.65),
+                        (0.25, 0.65),
+                        (0.25, 0.95));
                     break;
 
                 default:
                     points = Points(
-                        (0, 0), (1, 0), (1, 1), (0, 1));
+                        (0, 0),
+                        (1, 0),
+                        (1, 1),
+                        (0, 1));
                     break;
             }
 
@@ -1125,10 +1549,13 @@ namespace PresentationApp.UI.Canvas
             {
                 Width = largeur,
                 Height = hauteur,
+
                 Points = points,
+
                 Fill = remplissage,
                 Stroke = contour,
                 StrokeThickness = epaisseur,
+
                 Stretch = Stretch.Fill
             };
         }
@@ -1139,7 +1566,10 @@ namespace PresentationApp.UI.Canvas
             var resultat = new PointCollection();
 
             foreach (var point in coordonnees)
-                resultat.Add(new Point(point.X, point.Y));
+            {
+                resultat.Add(
+                    new Point(point.X, point.Y));
+            }
 
             return resultat;
         }
@@ -1163,8 +1593,11 @@ namespace PresentationApp.UI.Canvas
                     ? rayonExterieur
                     : rayonInterieur;
 
-                double x = centreX + Math.Cos(angle) * rayon;
-                double y = centreY + Math.Sin(angle) * rayon;
+                double x = centreX +
+                    Math.Cos(angle) * rayon;
+
+                double y = centreY +
+                    Math.Sin(angle) * rayon;
 
                 points.Add(new Point(x, y));
             }
@@ -1180,10 +1613,14 @@ namespace PresentationApp.UI.Canvas
 
             for (int i = 0; i <= 20; i++)
             {
-                double angle = Math.PI + i * Math.PI / 20;
+                double angle = Math.PI +
+                    i * Math.PI / 20;
 
-                double x = 0.5 + 0.5 * Math.Cos(angle);
-                double y = 1 - 0.5 * Math.Sin(angle);
+                double x = 0.5 +
+                    0.5 * Math.Cos(angle);
+
+                double y = 1 -
+                    0.5 * Math.Sin(angle);
 
                 points.Add(new Point(x, y));
             }
@@ -1197,19 +1634,22 @@ namespace PresentationApp.UI.Canvas
         // INSERTION D'IMAGE
         // =====================================================
 
-        private FrameworkElement CreateImage(ImageElement element)
+        private FrameworkElement CreateImage(
+            ImageElement element)
         {
             var image = new Image
             {
                 Width = element.Width,
                 Height = element.Height,
+
                 Stretch = Stretch.Fill,
                 IsHitTestVisible = false
             };
 
             try
             {
-                if (!string.IsNullOrWhiteSpace(element.ImagePath))
+                if (!string.IsNullOrWhiteSpace(
+                        element.ImagePath))
                 {
                     string path = element.ImagePath;
 
@@ -1229,7 +1669,9 @@ namespace PresentationApp.UI.Canvas
             {
                 Width = element.Width,
                 Height = element.Height,
+
                 Background = Brushes.Transparent,
+
                 Child = image
             };
         }

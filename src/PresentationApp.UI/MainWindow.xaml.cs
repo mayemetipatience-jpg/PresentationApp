@@ -8,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using Microsoft.Win32;
 using PresentationApp.Core.Models;
+using PresentationApp.UI.Themes;
 
 namespace PresentationApp.UI;
 
@@ -20,6 +21,8 @@ public partial class MainWindow : Window
 
     private bool _actualisationEnCours;
     private bool _actualisationCalquesEnCours;
+    private bool _actualisationTransitionEnCours;
+    private bool _actualisationAnimationEnCours;
 
     private readonly string[] _couleursFond =
     {
@@ -31,8 +34,6 @@ public partial class MainWindow : Window
         "#FCE4D6",
         "#E4DFEC"
     };
-
-    // COULEURS DE REMPLISSAGE AVEC LEURS NOMS
 
     private sealed class CouleurOption
     {
@@ -71,7 +72,7 @@ public partial class MainWindow : Window
     private const string TexteTitre = "Cliquez pour ajouter un titre";
     private const string TexteSousTitre = "Cliquez pour ajouter un sous-titre";
 
-    private class CalqueItem
+    private sealed class CalqueItem
     {
         public SlideElement Element { get; set; }
         public string Nom { get; set; }
@@ -93,10 +94,35 @@ public partial class MainWindow : Window
         slideCanvas.DiapositiveModifiee +=
             SlideCanvas_DiapositiveModifiee;
 
-        lstCalques.SelectionChanged +=
-            LstCalques_SelectionChanged;
-
         PreviewKeyDown += MainWindow_PreviewKeyDown;
+
+        // EVENEMENTS DES TRANSITIONS
+
+        cmbTransitions.SelectionChanged +=
+            CmbTransitions_SelectionChanged;
+
+        sliderDureeTransition.ValueChanged +=
+            SliderDureeTransition_ValueChanged;
+
+        cmbDirectionTransition.SelectionChanged +=
+            CmbDirectionTransition_SelectionChanged;
+
+        // EVENEMENTS DES ANIMATIONS
+
+        cmbAnimations.SelectionChanged +=
+            CmbAnimations_SelectionChanged;
+
+        sliderDureeAnimation.ValueChanged +=
+            SliderDureeAnimation_ValueChanged;
+
+        cmbDirectionAnimation.SelectionChanged +=
+            CmbDirectionAnimation_SelectionChanged;
+
+        txtDelaiAnimation.TextChanged +=
+            TxtDelaiAnimation_TextChanged;
+
+        cmbRepetitionsAnimation.SelectionChanged +=
+            CmbRepetitionsAnimation_SelectionChanged;
 
         InitialiserPresentation();
     }
@@ -114,14 +140,28 @@ public partial class MainWindow : Window
         lstDiapositives.SelectionChanged +=
             LstDiapositives_SelectionChanged;
 
+        lstCalques.SelectionChanged +=
+            LstCalques_SelectionChanged;
+
         lstDiapositives.SelectedIndex = 0;
     }
 
+    // CREATION D'UNE DIAPOSITIVE AVEC LE THEME ACTIF
+
     private Slide CreerDiapositive(int ordre)
     {
+        PresentationTheme? theme = PresentationTheme
+            .GetThemes()
+            .FirstOrDefault(t => t.Name == _presentation.ThemeName);
+
+        theme ??= PresentationTheme
+            .GetThemes()
+            .First(t => t.Name == "Moderne bleu");
+
         var diapositive = new Slide
         {
-            Order = ordre
+            Order = ordre,
+            BackgroundColor = theme.BackgroundColor
         };
 
         diapositive.Elements.Add(new TextElement
@@ -134,7 +174,10 @@ public partial class MainWindow : Window
             Style = new ElementStyle
             {
                 TextAlignment = "Center",
-                FontSize = 18
+                FontFamily = theme.FontFamily,
+                FontSize = 32,
+                TextColor = theme.TitleColor,
+                IsBold = true
             }
         });
 
@@ -148,7 +191,9 @@ public partial class MainWindow : Window
             Style = new ElementStyle
             {
                 TextAlignment = "Center",
-                FontSize = 18
+                FontFamily = theme.FontFamily,
+                FontSize = 20,
+                TextColor = theme.TextColor
             }
         });
 
@@ -168,6 +213,10 @@ public partial class MainWindow : Window
             slideCanvas.DisplaySlide(slide);
 
             ActualiserListeCalques();
+
+            ActualiserParametresTransition(slide);
+
+            ActualiserParametresAnimation(null);
         }
     }
 
@@ -193,6 +242,205 @@ public partial class MainWindow : Window
     {
         if (lstDiapositives.SelectedItem is Slide slide)
             slideCanvas.ActiverInsertionTexte(slide);
+    }
+
+    // INSERTION D'UN TABLEAU
+
+    private void BtnInsererTableau_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        if (lstDiapositives.SelectedItem is not Slide slide)
+        {
+            MessageBox.Show(
+                "Sélectionnez d'abord une diapositive.",
+                "Insertion d'un tableau",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            return;
+        }
+
+        if (cmbLignesTableau.SelectedItem is not ComboBoxItem itemLignes ||
+            !int.TryParse(
+                itemLignes.Content?.ToString(),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int lignes))
+        {
+            MessageBox.Show(
+                "Veuillez choisir un nombre de lignes valide.",
+                "Insertion d'un tableau",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+        if (cmbColonnesTableau.SelectedItem is not ComboBoxItem itemColonnes ||
+            !int.TryParse(
+                itemColonnes.Content?.ToString(),
+                NumberStyles.Integer,
+                CultureInfo.InvariantCulture,
+                out int colonnes))
+        {
+            MessageBox.Show(
+                "Veuillez choisir un nombre de colonnes valide.",
+                "Insertion d'un tableau",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+        if (lignes < 1 || lignes > 20 ||
+            colonnes < 1 || colonnes > 20)
+        {
+            MessageBox.Show(
+                "Le tableau doit contenir entre 1 et 20 lignes et colonnes.",
+                "Insertion d'un tableau",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+
+            return;
+        }
+
+        slideCanvas.ActiverInsertionTableau(
+            slide,
+            lignes,
+            colonnes);
+
+        MessageBox.Show(
+            $"Tableau de {lignes} ligne(s) et {colonnes} colonne(s) prêt.\n\nCliquez sur la diapositive pour le placer.",
+            "Insertion d'un tableau",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
+
+    // MODIFICATION DES LIGNES ET COLONNES DU TABLEAU
+
+    private void ModifierTableauSelectionne(
+        Action<TableElement> modification)
+    {
+        SlideElement? element =
+            slideCanvas.ElementSelectionne ?? _elementActuel;
+
+        if (element == null)
+        {
+            MessageBox.Show(
+                "Sélectionnez d'abord un tableau sur la diapositive.",
+                "Modification du tableau",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            return;
+        }
+
+        if (element.IsLocked)
+        {
+            AfficherMessageElementVerrouille();
+            return;
+        }
+
+        if (element is not TableElement tableau)
+        {
+            MessageBox.Show(
+                "L'élément sélectionné n'est pas un tableau.",
+                "Modification du tableau",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+
+            return;
+        }
+
+        modification(tableau);
+
+        slideCanvas.ActualiserElementSelectionne();
+
+        lstDiapositives.Items.Refresh();
+
+        ActualiserListeCalques();
+
+        SlideCanvas_ElementSelectionChangee(tableau);
+    }
+
+    // AJOUTER UNE LIGNE
+
+    private void BtnAjouterLigneTableau_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ModifierTableauSelectionne(tableau =>
+        {
+            tableau.InitialiserCellules();
+
+            tableau.Cells.Add(
+                Enumerable.Range(0, tableau.Columns)
+                    .Select(_ => string.Empty)
+                    .ToList());
+
+            tableau.Rows++;
+        });
+    }
+
+    // SUPPRIMER UNE LIGNE
+
+    private void BtnSupprimerLigneTableau_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ModifierTableauSelectionne(tableau =>
+        {
+            tableau.InitialiserCellules();
+
+            if (tableau.Rows <= 1)
+                return;
+
+            tableau.Cells.RemoveAt(tableau.Rows - 1);
+
+            tableau.Rows--;
+        });
+    }
+
+    // AJOUTER UNE COLONNE
+
+    private void BtnAjouterColonneTableau_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ModifierTableauSelectionne(tableau =>
+        {
+            tableau.InitialiserCellules();
+
+            foreach (List<string> ligne in tableau.Cells)
+            {
+                ligne.Add(string.Empty);
+            }
+
+            tableau.Columns++;
+        });
+    }
+
+    // SUPPRIMER UNE COLONNE
+
+    private void BtnSupprimerColonneTableau_Click(
+        object sender,
+        RoutedEventArgs e)
+    {
+        ModifierTableauSelectionne(tableau =>
+        {
+            tableau.InitialiserCellules();
+
+            if (tableau.Columns <= 1)
+                return;
+
+            foreach (List<string> ligne in tableau.Cells)
+            {
+                ligne.RemoveAt(tableau.Columns - 1);
+            }
+
+            tableau.Columns--;
+        });
     }
 
     // INSERTION DES FORMES
@@ -532,6 +780,24 @@ public partial class MainWindow : Window
                 ImagePath = image.ImagePath
             };
         }
+        else if (element is TableElement tableau)
+        {
+            TableElement copieTableau = new()
+            {
+                Rows = tableau.Rows,
+                Columns = tableau.Columns,
+                CellBackgroundColor = tableau.CellBackgroundColor,
+                HeaderBackgroundColor = tableau.HeaderBackgroundColor,
+                BorderColor = tableau.BorderColor,
+                BorderThickness = tableau.BorderThickness,
+                CellFontSize = tableau.CellFontSize,
+                Cells = tableau.Cells
+                    .Select(ligne => ligne.ToList())
+                    .ToList()
+            };
+
+            copie = copieTableau;
+        }
         else
         {
             throw new NotSupportedException(
@@ -545,8 +811,18 @@ public partial class MainWindow : Window
         copie.Rotation = element.Rotation;
         copie.ZIndex = element.ZIndex;
         copie.Style = style;
-
         copie.IsLocked = false;
+
+        // COPIE INDEPENDANTE DE L'ANIMATION
+
+        copie.Animation = new ElementAnimation
+        {
+            Type = element.Animation?.Type ?? AnimationType.None,
+            DurationMs = element.Animation?.DurationMs ?? 1000,
+            Direction = element.Animation?.Direction ?? "Left",
+            DelayMs = element.Animation?.DelayMs ?? 0,
+            RepeatCount = element.Animation?.RepeatCount ?? 1
+        };
 
         return copie;
     }
@@ -685,9 +961,23 @@ public partial class MainWindow : Window
 
     private void ActualiserListeCalques()
     {
+        if (lstCalques == null)
+            return;
+
         if (lstDiapositives.SelectedItem is not Slide slide)
         {
-            lstCalques.ItemsSource = null;
+            _actualisationCalquesEnCours = true;
+
+            try
+            {
+                lstCalques.ItemsSource = null;
+                lstCalques.SelectedItem = null;
+            }
+            finally
+            {
+                _actualisationCalquesEnCours = false;
+            }
+
             return;
         }
 
@@ -712,6 +1002,11 @@ public partial class MainWindow : Window
                 {
                     string contenu = texte.Text ?? "";
 
+                    contenu = contenu
+                        .Replace("\r", " ")
+                        .Replace("\n", " ")
+                        .Trim();
+
                     if (string.IsNullOrWhiteSpace(contenu))
                         contenu = "Texte vide";
 
@@ -728,6 +1023,10 @@ public partial class MainWindow : Window
                 {
                     nom = "Image";
                 }
+                else if (element is TableElement tableau)
+                {
+                    nom = $"Tableau : {tableau.Rows} x {tableau.Columns}";
+                }
                 else
                 {
                     nom = "Élément";
@@ -741,19 +1040,12 @@ public partial class MainWindow : Window
 
             lstCalques.ItemsSource = calques;
 
-            if (elementSelectionne != null)
-            {
-                foreach (CalqueItem calque in calques)
-                {
-                    if (ReferenceEquals(
+            lstCalques.SelectedItem = elementSelectionne == null
+                ? null
+                : calques.FirstOrDefault(
+                    calque => ReferenceEquals(
                         calque.Element,
-                        elementSelectionne))
-                    {
-                        lstCalques.SelectedItem = calque;
-                        break;
-                    }
-                }
-            }
+                        elementSelectionne));
         }
         finally
         {
@@ -865,6 +1157,8 @@ public partial class MainWindow : Window
 
         lstDiapositives.Items.Refresh();
         ActualiserListeCalques();
+
+        ActualiserParametresAnimation(null);
     }
 
     // SUPPRESSION D'UNE DIAPOSITIVE
@@ -1220,6 +1514,9 @@ public partial class MainWindow : Window
         }
 
         ActualiserListeCalques();
+
+        // Synchroniser les paramètres de l'animation
+        ActualiserParametresAnimation(element);
     }
 
     private void SelectionnerValeursFormatage(TextElement texte)
@@ -1322,6 +1619,472 @@ public partial class MainWindow : Window
             FormaterValeur(e.NewValue) + "°";
 
         slideCanvas.ActualiserElementSelectionne();
+    }
+
+    // =========================================================
+    // GESTION DES TRANSITIONS
+    // =========================================================
+
+    private void CmbTransitions_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (_actualisationTransitionEnCours)
+            return;
+
+        if (lstDiapositives.SelectedItem is not Slide slide)
+            return;
+
+        if (cmbTransitions.SelectedItem is not ComboBoxItem item)
+            return;
+
+        string? valeur = item.Content?.ToString();
+
+        if (!Enum.TryParse(
+            valeur,
+            true,
+            out TransitionType type))
+            return;
+
+        slide.Transition ??= new Transition();
+
+        slide.Transition.Type = type;
+
+        AppliquerParametresTransition(slide);
+    }
+
+    private void SliderDureeTransition_ValueChanged(
+        object sender,
+        RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_actualisationTransitionEnCours)
+            return;
+
+        if (lstDiapositives.SelectedItem is not Slide slide)
+            return;
+
+        slide.Transition ??= new Transition();
+
+        slide.Transition.DurationMs =
+            (int)Math.Round(sliderDureeTransition.Value);
+
+        if (txtDureeTransition != null)
+        {
+            txtDureeTransition.Text =
+                slide.Transition.DurationMs + " ms";
+        }
+    }
+
+    private void CmbDirectionTransition_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (_actualisationTransitionEnCours)
+            return;
+
+        if (lstDiapositives.SelectedItem is not Slide slide)
+            return;
+
+        if (cmbDirectionTransition.SelectedItem is not ComboBoxItem item)
+            return;
+
+        string? direction = item.Content?.ToString();
+
+        if (string.IsNullOrWhiteSpace(direction))
+            return;
+
+        slide.Transition ??= new Transition();
+
+        slide.Transition.Direction = direction;
+    }
+
+    private void AppliquerParametresTransition(Slide slide)
+    {
+        if (slide.Transition == null)
+            slide.Transition = new Transition();
+
+        if (cmbTransitions.SelectedItem is ComboBoxItem item)
+        {
+            if (Enum.TryParse(
+                item.Content?.ToString(),
+                true,
+                out TransitionType type))
+            {
+                slide.Transition.Type = type;
+            }
+        }
+
+        slide.Transition.DurationMs =
+            (int)Math.Round(sliderDureeTransition.Value);
+
+        if (cmbDirectionTransition.SelectedItem is ComboBoxItem directionItem)
+        {
+            string? direction = directionItem.Content?.ToString();
+
+            if (!string.IsNullOrWhiteSpace(direction))
+                slide.Transition.Direction = direction;
+        }
+
+        if (txtDureeTransition != null)
+        {
+            txtDureeTransition.Text =
+                slide.Transition.DurationMs + " ms";
+        }
+    }
+
+    private void ActualiserParametresTransition(Slide slide)
+    {
+        if (slide.Transition == null)
+            slide.Transition = new Transition();
+
+        _actualisationTransitionEnCours = true;
+
+        try
+        {
+            string type = slide.Transition.Type.ToString();
+
+            foreach (ComboBoxItem item in cmbTransitions.Items)
+            {
+                if (string.Equals(
+                    item.Content?.ToString(),
+                    type,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    cmbTransitions.SelectedItem = item;
+                    break;
+                }
+            }
+
+            sliderDureeTransition.Value =
+                Math.Clamp(
+                    slide.Transition.DurationMs,
+                    sliderDureeTransition.Minimum,
+                    sliderDureeTransition.Maximum);
+
+            if (txtDureeTransition != null)
+            {
+                txtDureeTransition.Text =
+                    slide.Transition.DurationMs + " ms";
+            }
+
+            foreach (ComboBoxItem item in cmbDirectionTransition.Items)
+            {
+                if (string.Equals(
+                    item.Content?.ToString(),
+                    slide.Transition.Direction,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    cmbDirectionTransition.SelectedItem = item;
+                    break;
+                }
+            }
+        }
+        finally
+        {
+            _actualisationTransitionEnCours = false;
+        }
+    }
+
+    // =========================================================
+    // GESTION DES ANIMATIONS
+    // =========================================================
+
+    private void CmbAnimations_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (_actualisationAnimationEnCours)
+            return;
+
+        if (_elementActuel == null)
+            return;
+
+        if (_elementActuel.IsLocked)
+        {
+            AfficherMessageElementVerrouille();
+            ActualiserParametresAnimation(_elementActuel);
+            return;
+        }
+
+        if (cmbAnimations.SelectedItem is not ComboBoxItem item)
+            return;
+
+        string? valeur = item.Content?.ToString();
+
+        if (!Enum.TryParse(
+            valeur?.Replace(" ", ""),
+            true,
+            out AnimationType type))
+            return;
+
+        _elementActuel.Animation ??= new ElementAnimation();
+
+        _elementActuel.Animation.Type = type;
+
+        AppliquerParametresAnimation(_elementActuel);
+    }
+
+    private void SliderDureeAnimation_ValueChanged(
+        object sender,
+        RoutedPropertyChangedEventArgs<double> e)
+    {
+        if (_actualisationAnimationEnCours ||
+            _elementActuel == null)
+            return;
+
+        if (_elementActuel.IsLocked)
+            return;
+
+        _elementActuel.Animation ??= new ElementAnimation();
+
+        _elementActuel.Animation.DurationMs =
+            (int)Math.Round(sliderDureeAnimation.Value);
+
+        if (txtDureeAnimation != null)
+        {
+            txtDureeAnimation.Text =
+                _elementActuel.Animation.DurationMs + " ms";
+        }
+    }
+
+    private void CmbDirectionAnimation_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (_actualisationAnimationEnCours ||
+            _elementActuel == null)
+            return;
+
+        if (_elementActuel.IsLocked)
+            return;
+
+        if (cmbDirectionAnimation.SelectedItem is not ComboBoxItem item)
+            return;
+
+        string? direction = item.Content?.ToString();
+
+        if (string.IsNullOrWhiteSpace(direction))
+            return;
+
+        _elementActuel.Animation ??= new ElementAnimation();
+
+        _elementActuel.Animation.Direction = direction;
+    }
+
+    private void TxtDelaiAnimation_TextChanged(
+        object sender,
+        TextChangedEventArgs e)
+    {
+        if (_actualisationAnimationEnCours ||
+            _elementActuel == null)
+            return;
+
+        if (_elementActuel.IsLocked)
+            return;
+
+        if (!int.TryParse(
+            txtDelaiAnimation.Text,
+            NumberStyles.Integer,
+            CultureInfo.CurrentCulture,
+            out int delai))
+            return;
+
+        if (delai < 0)
+            delai = 0;
+
+        _elementActuel.Animation ??= new ElementAnimation();
+
+        _elementActuel.Animation.DelayMs = delai;
+    }
+
+    private void CmbRepetitionsAnimation_SelectionChanged(
+        object sender,
+        SelectionChangedEventArgs e)
+    {
+        if (_actualisationAnimationEnCours ||
+            _elementActuel == null)
+            return;
+
+        if (_elementActuel.IsLocked)
+            return;
+
+        if (cmbRepetitionsAnimation.SelectedItem is not ComboBoxItem item)
+            return;
+
+        if (!int.TryParse(
+            item.Content?.ToString(),
+            NumberStyles.Integer,
+            CultureInfo.InvariantCulture,
+            out int repetitions))
+            return;
+
+        _elementActuel.Animation ??= new ElementAnimation();
+
+        _elementActuel.Animation.RepeatCount = repetitions;
+    }
+
+    private void AppliquerParametresAnimation(SlideElement element)
+    {
+        if (element.Animation == null)
+            element.Animation = new ElementAnimation();
+
+        if (cmbAnimations.SelectedItem is ComboBoxItem animationItem)
+        {
+            if (Enum.TryParse(
+                animationItem.Content?.ToString()?.Replace(" ", ""),
+                true,
+                out AnimationType type))
+            {
+                element.Animation.Type = type;
+            }
+        }
+
+        element.Animation.DurationMs =
+            (int)Math.Round(sliderDureeAnimation.Value);
+
+        element.Animation.DelayMs =
+            int.TryParse(
+                txtDelaiAnimation.Text,
+                NumberStyles.Integer,
+                CultureInfo.CurrentCulture,
+                out int delai)
+                ? Math.Max(0, delai)
+                : 0;
+
+        if (cmbDirectionAnimation.SelectedItem is ComboBoxItem directionItem)
+        {
+            string? direction = directionItem.Content?.ToString();
+
+            if (!string.IsNullOrWhiteSpace(direction))
+                element.Animation.Direction = direction;
+        }
+
+        if (cmbRepetitionsAnimation.SelectedItem is ComboBoxItem repetitionItem)
+        {
+            if (int.TryParse(
+                repetitionItem.Content?.ToString(),
+                out int repetitions))
+            {
+                element.Animation.RepeatCount = repetitions;
+            }
+        }
+
+        if (txtDureeAnimation != null)
+        {
+            txtDureeAnimation.Text =
+                element.Animation.DurationMs + " ms";
+        }
+    }
+
+    private void ActualiserParametresAnimation(SlideElement? element)
+    {
+        _actualisationAnimationEnCours = true;
+
+        try
+        {
+            bool elementDisponible = element != null;
+            bool elementModifiable = elementDisponible && !element!.IsLocked;
+
+            cmbAnimations.IsEnabled = elementModifiable;
+            sliderDureeAnimation.IsEnabled = elementModifiable;
+            txtDelaiAnimation.IsEnabled = elementModifiable;
+            cmbDirectionAnimation.IsEnabled = elementModifiable;
+            cmbRepetitionsAnimation.IsEnabled = elementModifiable;
+
+            if (element == null)
+            {
+                cmbAnimations.SelectedIndex = 0;
+                sliderDureeAnimation.Value = 1000;
+
+                if (txtDureeAnimation != null)
+                    txtDureeAnimation.Text = "1000 ms";
+
+                txtDelaiAnimation.Text = "0";
+
+                cmbDirectionAnimation.SelectedIndex = 0;
+                cmbRepetitionsAnimation.SelectedIndex = 0;
+
+                return;
+            }
+
+            element.Animation ??= new ElementAnimation();
+
+            string type = element.Animation.Type.ToString();
+
+            bool animationTrouvee = false;
+
+            foreach (ComboBoxItem item in cmbAnimations.Items)
+            {
+                if (string.Equals(
+                    item.Content?.ToString()?.Replace(" ", ""),
+                    type,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    cmbAnimations.SelectedItem = item;
+                    animationTrouvee = true;
+                    break;
+                }
+            }
+
+            if (!animationTrouvee)
+                cmbAnimations.SelectedIndex = 0;
+
+            sliderDureeAnimation.Value =
+                Math.Clamp(
+                    element.Animation.DurationMs,
+                    sliderDureeAnimation.Minimum,
+                    sliderDureeAnimation.Maximum);
+
+            if (txtDureeAnimation != null)
+            {
+                txtDureeAnimation.Text =
+                    element.Animation.DurationMs + " ms";
+            }
+
+            txtDelaiAnimation.Text =
+                element.Animation.DelayMs.ToString(
+                    CultureInfo.CurrentCulture);
+
+            bool directionTrouvee = false;
+
+            foreach (ComboBoxItem item in cmbDirectionAnimation.Items)
+            {
+                if (string.Equals(
+                    item.Content?.ToString(),
+                    element.Animation.Direction,
+                    StringComparison.OrdinalIgnoreCase))
+                {
+                    cmbDirectionAnimation.SelectedItem = item;
+                    directionTrouvee = true;
+                    break;
+                }
+            }
+
+            if (!directionTrouvee)
+                cmbDirectionAnimation.SelectedIndex = 0;
+
+            bool repetitionsTrouvees = false;
+
+            foreach (ComboBoxItem item in cmbRepetitionsAnimation.Items)
+            {
+                if (int.TryParse(
+                    item.Content?.ToString(),
+                    out int repetitions) &&
+                    repetitions == element.Animation.RepeatCount)
+                {
+                    cmbRepetitionsAnimation.SelectedItem = item;
+                    repetitionsTrouvees = true;
+                    break;
+                }
+            }
+
+            if (!repetitionsTrouvees)
+                cmbRepetitionsAnimation.SelectedIndex = 0;
+        }
+        finally
+        {
+            _actualisationAnimationEnCours = false;
+        }
     }
 
     // FORMATAGE DES VALEURS
