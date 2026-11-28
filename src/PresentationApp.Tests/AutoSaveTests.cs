@@ -12,7 +12,8 @@ public class AutoSaveTests
     {
         string chemin = AutoSaveService.GetBackupPath(Path.Combine("dossier", "ma-presentation.json"));
 
-        Assert.Equal(Path.Combine("dossier", "ma-presentation.autosave.json"), chemin);
+        string attendu = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "MiniPowerPoint", "AutoSave", "ma-presentation", "autosave.json");
+        Assert.Equal(attendu, chemin);
     }
 
     [Fact]
